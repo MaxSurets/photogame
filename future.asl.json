@@ -1,0 +1,236 @@
+{
+  "Comment": "An example of the Amazon States Language for starting a task and waiting for a callback.",
+  "QueryLanguage": "JSONata",
+  "StartAt": "WaitForHost",
+  "States": {
+    "WaitForHost": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::apigateway:invoke.waitForTaskToken",
+      "Arguments": {
+        "ApiEndpoint": "${apiEndpoint}",
+        "Method": "POST",
+        "AllowNullValue": true,
+        "Headers": {
+          "Header1": [
+            "HeaderValue1"
+          ],
+          "Header2": [
+            "HeaderValue2",
+            "HeaderValue3"
+          ]
+        },
+        "Stage": "MyStage",
+        "Path": "{% '/@connections/' & $states.output.connectionID %}",
+        "QueryParameters": {
+          "QueryParameter1": [
+            "QueryParameterValue1"
+          ],
+          "QueryParameter2": [
+            "QueryParameterValue2",
+            "QueryParameterValue3"
+          ]
+        },
+        "RequestBody": {
+          "Payload": "Hello from Step Functions!"
+        },
+        "AuthType": "IAM_ROLE"
+      },
+      "Next": "GeneratePromptAndUploadUrls"
+    },
+    "GeneratePromptAndUploadUrls": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "",
+        "Payload": "{% $states.input %}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "AwaitUploads"
+    },
+    "AwaitUploads": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "SendRoundInfo",
+        "States": {
+          "SendRoundInfo": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::apigateway:invoke.waitForTaskToken",
+            "Arguments": {
+              "ApiEndpoint": "MyApiId.execute-api.us-east-1.amazonaws.com",
+              "Method": "POST",
+              "AllowNullValue": true,
+              "Headers": {
+                "Header1": [
+                  "HeaderValue1"
+                ],
+                "Header2": [
+                  "HeaderValue2",
+                  "HeaderValue3"
+                ]
+              },
+              "Stage": "MyStage",
+              "Path": "/pets/dog/1",
+              "QueryParameters": {
+                "QueryParameter1": [
+                  "QueryParameterValue1"
+                ],
+                "QueryParameter2": [
+                  "QueryParameterValue2",
+                  "QueryParameterValue3"
+                ]
+              },
+              "RequestBody": {
+                "Payload": "Hello from Step Functions!"
+              },
+              "AuthType": "IAM_ROLE"
+            },
+            "End": true
+          }
+        }
+      },
+      "Next": "StartVoting",
+      "Items": "{% $states.input.players %}"
+    },
+    "StartVoting": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::apigateway:invoke",
+      "Arguments": {
+        "ApiEndpoint": "MyApiId.execute-api.us-east-1.amazonaws.com",
+        "Method": "POST",
+        "AllowNullValue": true,
+        "Headers": {
+          "Header1": [
+            "HeaderValue1"
+          ],
+          "Header2": [
+            "HeaderValue2",
+            "HeaderValue3"
+          ]
+        },
+        "Stage": "MyStage",
+        "Path": "/pets/dog/1",
+        "QueryParameters": {
+          "QueryParameter1": [
+            "QueryParameterValue1"
+          ],
+          "QueryParameter2": [
+            "QueryParameterValue2",
+            "QueryParameterValue3"
+          ]
+        },
+        "RequestBody": {
+          "Payload": "Hello from Step Functions!"
+        },
+        "AuthType": "IAM_ROLE"
+      },
+      "Next": "AwaitVotes"
+    },
+    "AwaitVotes": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "AwaitVote",
+        "States": {
+          "AwaitVote": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::apigateway:invoke.waitForTaskToken",
+            "Arguments": {
+              "ApiEndpoint": "MyApiId.execute-api.us-east-1.amazonaws.com",
+              "Method": "POST",
+              "AllowNullValue": true,
+              "Headers": {
+                "Header1": [
+                  "HeaderValue1"
+                ],
+                "Header2": [
+                  "HeaderValue2",
+                  "HeaderValue3"
+                ]
+              },
+              "Stage": "MyStage",
+              "Path": "/pets/dog/1",
+              "QueryParameters": {
+                "QueryParameter1": [
+                  "QueryParameterValue1"
+                ],
+                "QueryParameter2": [
+                  "QueryParameterValue2",
+                  "QueryParameterValue3"
+                ]
+              },
+              "RequestBody": {
+                "Payload": "Hello from Step Functions!"
+              },
+              "AuthType": "IAM_ROLE"
+            },
+            "End": true
+          }
+        }
+      },
+      "Next": "ContinueGame?"
+    },
+    "ContinueGame?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "API Gateway Invoke",
+          "Condition": "{% $roundCount >= $maxRounds %}"
+        }
+      ],
+      "Default": "GeneratePromptAndUploadUrls"
+    },
+    "API Gateway Invoke": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::apigateway:invoke",
+      "Arguments": {
+        "ApiEndpoint": "MyApiId.execute-api.us-east-1.amazonaws.com",
+        "Method": "POST",
+        "AllowNullValue": true,
+        "Headers": {
+          "Header1": [
+            "HeaderValue1"
+          ],
+          "Header2": [
+            "HeaderValue2",
+            "HeaderValue3"
+          ]
+        },
+        "Stage": "MyStage",
+        "Path": "/pets/dog/1",
+        "QueryParameters": {
+          "QueryParameter1": [
+            "QueryParameterValue1"
+          ],
+          "QueryParameter2": [
+            "QueryParameterValue2",
+            "QueryParameterValue3"
+          ]
+        },
+        "RequestBody": {
+          "Payload": "Hello from Step Functions!"
+        },
+        "AuthType": "IAM_ROLE"
+      },
+      "End": true
+    }
+  }
+}

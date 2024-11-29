@@ -1,0 +1,25 @@
+{
+    "Comment": "An example of the Amazon States Language for starting a task and waiting for a callback.",
+    "QueryLanguage": "JSONata",
+    "StartAt": "WaitForHost",
+    "States": {
+      "WaitForHost": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::apigateway:invoke.waitForTaskToken",
+        "Arguments": {
+          "ApiEndpoint": "${ApiEndpoint}",
+          "Method": "POST",
+          "AllowNullValues": true,
+          "Headers": {},
+          "Stage": "${Stage}",
+          "Path": "{% '/@connections/' & $states.input.hostConnectionId %}",
+          "QueryParameters": {},
+          "RequestBody": {
+            "callbackToken": "{% $states.context.Task.Token %}"
+          },
+          "AuthType": "IAM_ROLE"
+        },
+        "End": true
+      }
+    }
+  }
