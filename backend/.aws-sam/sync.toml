@@ -2,12 +2,16 @@
 
 [sync_state]
 dependency_layer = false
-latest_infra_sync_time = "2024-11-29T18:46:26.882399"
+latest_infra_sync_time = "2024-12-01T20:48:25.674651"
 
 [resource_sync_states."ZipFunctionSyncFlow:OnConnectFunction"]
-hash = "4a4186ff8748240a5dfacbf76e8048dd2a21ffa70f56f4762bb585f9db927d16"
-sync_time = "2024-11-29T04:19:51.192249"
+hash = "45c3e3a5174f32002187fe9405cd6d6f1d2deab597f529ad7101a5595d07aba6"
+sync_time = "2024-12-01T18:29:44.283553"
 
 [resource_sync_states."ZipFunctionSyncFlow:SendMessageFunction"]
-hash = "e7daa78dedd5e1e63a69170829c0bbcbab2610e77ec29454c305b8d841d6ea52"
-sync_time = "2024-11-29T18:33:23.567757"
+hash = "5123e217f2c79b987b1b34ec37229deca0ca2b93f1675170be0eccff1827dbbc"
+sync_time = "2024-12-01T19:16:42.032042"
+
+[resource_sync_states."ZipFunctionSyncFlow:StartGameFunction"]
+hash = "22debe51911a65226418df4e3d42e708e4cd045c0bff0784245e09b8b04c8698"
+sync_time = "2024-12-01T17:15:54.481131"

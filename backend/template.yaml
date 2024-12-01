@@ -4,6 +4,14 @@ Description: |
   backend
   Sample SAM Template for backend
 
+Parameters:
+  GameStateMachineName:
+    Type: String
+    Default: GameLogic
+  StageName:
+    Type: String
+    Default: Staging
+
 Resources:
   GameApi:
     Type: AWS::ApiGatewayV2::Api
@@ -65,6 +73,24 @@ Resources:
       Description: Send Integration
       IntegrationType: AWS_PROXY
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageFunction.Arn}/invocations
+  StartGameRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref GameApi
+      RouteKey: startgame
+      AuthorizationType: NONE
+      OperationName: StartGameRoute
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref StartGameInteg
+  StartGameInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref GameApi
+      Description: StartGame Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StartGameFunction.Arn}/invocations
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
@@ -76,10 +102,11 @@ Resources:
   Stage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      StageName: Staging
+      StageName: !Ref StageName
       Description: Staging Stage
       DeploymentId: !Ref Deployment
       ApiId: !Ref GameApi
+
   OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -87,6 +114,30 @@ Resources:
       Handler: app.lambda_handler
       MemorySize: 128
       Runtime: python3.13
+      Timeout: 35
+      Environment:
+        Variables:
+          game_state_machine_arn: !Sub
+              - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${name}"
+              - name: !Ref GameStateMachineName
+          connections_url: !Sub "https://${GameApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Action:
+              - states:StartExecution
+              - states:DescribeExecution
+            Resource:
+              - !Sub
+                - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${name}"
+                - name: !Ref GameStateMachineName
+              - !Sub
+                - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${name}:*"
+                - name: !Ref GameStateMachineName
+        - Statement:
+          - Effect: Allow
+            Action: execute-api:ManageConnections
+            Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GameApi}/*         
   OnConnectPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -95,6 +146,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref OnConnectFunction
       Principal: apigateway.amazonaws.com
+    
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -110,6 +162,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref OnDisconnectFunction
       Principal: apigateway.amazonaws.com
+
   SendMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -124,6 +177,17 @@ Resources:
                 - execute-api:ManageConnections
               Resource:
                 - !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GameApi}/*
+        - Statement:
+          - Effect: Allow
+            Action:
+              - states:SendTaskSuccess
+            Resource:
+              - !Sub
+                - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${name}"
+                - name: !Ref GameStateMachineName
+              - !Sub
+                - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${name}:*"
+                - name: !Ref GameStateMachineName
   SendMessagePermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -133,9 +197,39 @@ Resources:
       FunctionName: !Ref SendMessageFunction
       Principal: apigateway.amazonaws.com
 
+  StartGameFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/start_game/
+      Handler: app.lambda_handler
+      MemorySize: 128
+      Runtime: python3.13
+      Timeout: 35
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Action:
+              - states:SendTaskSuccess
+            Resource:
+              - !Sub
+                - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${name}"
+                - name: !Ref GameStateMachineName
+              - !Sub
+                - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${name}:*"
+                - name: !Ref GameStateMachineName
+  StartGamePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - GameApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StartGameFunction
+      Principal: apigateway.amazonaws.com
+
   GameStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      Name: !Ref GameStateMachineName
       DefinitionSubstitutions:
         ApiEndpoint: !Sub ${GameApi}.execute-api.${AWS::Region}.amazonaws.com
         Stage: !Ref Stage
@@ -150,6 +244,7 @@ Resources:
             - Effect: Allow
               Action:
                 - execute-api:ManageConnections
+                - execute-api:Invoke
               Resource:
                 - !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GameApi}/*
       DefinitionUri: statemachine/game.asl.json

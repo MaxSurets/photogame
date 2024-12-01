@@ -27,4 +27,13 @@ manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
 packagetype = "Zip"
 functions = ["SendMessageFunction"]
 
+[function_build_definitions.b94c543d-5d51-4562-b47e-e595b9c13172]
+codeuri = "/home/max/code/photogame/backend/functions/start_game"
+runtime = "python3.13"
+architecture = "x86_64"
+handler = "app.lambda_handler"
+manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
+packagetype = "Zip"
+functions = ["StartGameFunction"]
+
 [layer_build_definitions]
