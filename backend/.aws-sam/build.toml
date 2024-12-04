@@ -18,15 +18,6 @@ manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
 packagetype = "Zip"
 functions = ["OnDisconnectFunction"]
 
-[function_build_definitions.c924a197-119c-456b-9d44-9a8f29cd788b]
-codeuri = "/home/max/code/photogame/backend/functions/send_message"
-runtime = "python3.13"
-architecture = "x86_64"
-handler = "app.lambda_handler"
-manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
-packagetype = "Zip"
-functions = ["SendMessageFunction"]
-
 [function_build_definitions.b94c543d-5d51-4562-b47e-e595b9c13172]
 codeuri = "/home/max/code/photogame/backend/functions/start_game"
 runtime = "python3.13"
@@ -44,5 +35,14 @@ handler = "app.lambda_handler"
 manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
 packagetype = "Zip"
 functions = ["GenerateRoundInfoFunction"]
+
+[function_build_definitions.ced3fc3b-3107-46a8-bbbc-75e1369181d2]
+codeuri = "/home/max/code/photogame/backend/functions/execute_callback"
+runtime = "python3.13"
+architecture = "x86_64"
+handler = "app.lambda_handler"
+manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
+packagetype = "Zip"
+functions = ["ExecuteCallbackFunction"]
 
 [layer_build_definitions]

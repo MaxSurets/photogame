@@ -73,6 +73,28 @@ Resources:
       Description: Disconnect Integration
       IntegrationType: AWS_PROXY
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
+  UploadedPhotoRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref GameApi
+      RouteKey: uploadedphoto
+      AuthorizationType: NONE
+      OperationName: UploadedPhotoRoute
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref UploadedPhotoInteg
+  VoteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref GameApi
+      RouteKey: vote
+      AuthorizationType: NONE
+      OperationName: VoteRoute
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CallbackInteg
   SendRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -83,14 +105,21 @@ Resources:
       Target: !Join
         - /
         - - integrations
-          - !Ref SendInteg
-  SendInteg:
+          - !Ref CallbackInteg
+  CallbackInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref GameApi
       Description: Send Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageFunction.Arn}/invocations
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ExecuteCallbackFunction.Arn}/invocations
+  UploadedPhotoInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref GameApi
+      Description: Send Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ExecuteCallbackFunction.Arn}/invocations
   StartGameRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -109,10 +138,13 @@ Resources:
       Description: StartGame Integration
       IntegrationType: AWS_PROXY
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StartGameFunction.Arn}/invocations
+
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - ConnectRoute
+      - UploadedPhotoRoute
+      - VoteRoute
       - SendRoute
       - DisconnectRoute
     Properties:
@@ -181,10 +213,10 @@ Resources:
       FunctionName: !Ref OnDisconnectFunction
       Principal: apigateway.amazonaws.com
 
-  SendMessageFunction:
+  ExecuteCallbackFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/send_message/
+      CodeUri: functions/execute_callback/
       Handler: app.lambda_handler
       MemorySize: 128
       Runtime: python3.13
@@ -206,13 +238,13 @@ Resources:
               - !Sub
                 - "arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${name}:*"
                 - name: !Ref GameStateMachineName
-  SendMessagePermission:
+  ExecuteCallbackPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - GameApi
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref SendMessageFunction
+      FunctionName: !Ref ExecuteCallbackFunction
       Principal: apigateway.amazonaws.com
 
   StartGameFunction:
@@ -264,13 +296,16 @@ Resources:
       DefinitionSubstitutions:
         ApiEndpoint: !Sub ${GameApi}.execute-api.${AWS::Region}.amazonaws.com
         Stage: !Ref Stage
+        GenerateRoundInfoFunctionArn: !Ref GenerateRoundInfoFunction
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref OnConnectFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref OnDisconnectFunction
         - LambdaInvokePolicy:
-            FunctionName: !Ref SendMessageFunction
+            FunctionName: !Ref ExecuteCallbackFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateRoundInfoFunction
         - Statement:
             - Effect: Allow
               Action:

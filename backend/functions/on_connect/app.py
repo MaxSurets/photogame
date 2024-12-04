@@ -102,6 +102,7 @@ def lambda_handler(event, context):
                         "room": room_id,
                         "hostConnectionId": connection_id,
                         "hostName": name,
+                        "maxRounds": 3  # TODO: adjustable max rounds count
                     }
                 ),
             )

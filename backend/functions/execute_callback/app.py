@@ -36,10 +36,16 @@ def lambda_handler(event, context):
 
     output = {}
 
+    if event["requestContext"]["routeKey"] == "uploaded_photo":
+        output["uploaded"] = True
+        print("Photo uploaded")
+    elif event["requestContext"]["routeKey"] == "vote":
+        output["vote"] = body.get("playerId")
+
     sfn_client.send_task_success(taskToken=task_token, output=json.dumps(output))
 
     return {
         "statusCode": 200,
         "headers": {"Content-Type": "application/json"},
-        "body": '{"asd":"asd"}',
+        "body": '{"message":"Callback successful"}',
     }

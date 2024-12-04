@@ -22,8 +22,9 @@
       "Next": "GenerateRoundInfo",
       "Assign": {
         "players": "{% $states.result.players %}",
-        "round": 1,
-        "room": "{% $states.result.room %}"
+        "round": 0,
+        "room": "{% $states.input.room %}",
+        "maxRounds": "{% $states.input.maxRounds %}"
       }
     },
     "GenerateRoundInfo": {
@@ -31,7 +32,7 @@
       "Resource": "arn:aws:states:::lambda:invoke",
       "Output": "{% $states.result.Payload %}",
       "Arguments": {
-        "FunctionName": "",
+        "FunctionName": "${GenerateRoundInfoFunctionArn}",
         "Payload": {
           "room": "{% $room %}",
           "round": "{% $round %}",
@@ -54,8 +55,8 @@
       ],
       "Next": "AwaitUploads",
       "Assign": {
-        "prompt": "{% $states.result.prompt %}",
-        "uploads": "{% $states.result.uploads %}"
+        "prompt": "{% $states.result.Payload.prompt %}",
+        "uploads": "{% $states.result.Payload.uploads %}"
       }
     },
     "AwaitUploads": {
@@ -79,7 +80,9 @@
               "QueryParameters": {},
               "RequestBody": {
                 "callbackToken": "{% $states.context.Task.Token %}",
-                "uploadUrl": "{% $state.input.uploadUrl %}"
+                "uploadUrl": "{% $states.input.uploadUrl %}",
+                "prompt": "{% $prompt %}",
+                "round": "{% $round %}"
               },
               "AuthType": "IAM_ROLE"
             },
@@ -87,8 +90,90 @@
           }
         }
       },
-      "End": true,
-      "Items": "{% $uploads %}"
+      "Next": "AwaitVotes",
+      "Items": "{% $uploads %}",
+      "Assign": {
+        "round": "{% $round + 1 %}"
+      }
+    },
+    "AwaitVotes": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "SendVoteSignal",
+        "States": {
+          "SendVoteSignal": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::apigateway:invoke.waitForTaskToken",
+            "Arguments": {
+              "ApiEndpoint": "${ApiEndpoint}",
+              "Method": "POST",
+              "AllowNullValues": true,
+              "Headers": {},
+              "Stage": "${Stage}",
+              "Path": "{% '/@connections/' & $states.input.connectionId %}",
+              "QueryParameters": {},
+              "RequestBody": {
+                "callbackToken": "{% $states.context.Task.Token %}"
+              },
+              "AuthType": "IAM_ROLE"
+            },
+            "End": true
+          }
+        }
+      },
+      "Items": "{% $uploads %}",
+      "Next": "SendResultsToPlayers"
+    },
+    "SendResultsToPlayers": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "SendResults",
+        "States": {
+          "SendResults": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::apigateway:invoke",
+            "Arguments": {
+              "ApiEndpoint": "${ApiEndpoint}",
+              "Method": "POST",
+              "AllowNullValues": true,
+              "Headers": {},
+              "Stage": "${Stage}",
+              "Path": "{% '/@connections/' & $states.input.connectionId %}",
+              "QueryParameters": {},
+              "RequestBody": {
+                "results": "{% $votes %}"
+              },
+              "AuthType": "IAM_ROLE"
+            },
+            "End": true
+          }
+        }
+      },
+      "Items": "{% $players %}",
+      "Assign": {
+        "votes": "{% $states.input %}"
+      },
+      "Next": "endGame?"
+    },
+    "endGame?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "EndGame",
+          "Condition": "{% $round > $maxRounds %}"
+        }
+      ],
+      "Default": "GenerateRoundInfo"
+    },
+    "EndGame": {
+      "Type": "Pass",
+      "End": true
     }
   }
 }

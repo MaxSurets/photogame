@@ -2,11 +2,11 @@
 
 [sync_state]
 dependency_layer = false
-latest_infra_sync_time = "2024-12-02T04:30:05.901705"
+latest_infra_sync_time = "2024-12-04T02:11:39.311940"
 
 [resource_sync_states."ZipFunctionSyncFlow:OnConnectFunction"]
-hash = "45c3e3a5174f32002187fe9405cd6d6f1d2deab597f529ad7101a5595d07aba6"
-sync_time = "2024-12-01T18:29:44.283553"
+hash = "b8c7412aad95af60b21480434a8eb73690e2ae0fe599c39d066bb5f7c5957d05"
+sync_time = "2024-12-04T03:28:46.164451"
 
 [resource_sync_states."ZipFunctionSyncFlow:SendMessageFunction"]
 hash = "0989ad8e18c1b1be68f17e8aa0e975f60d6f96f504f3be1fe09f38017257bb77"
@@ -19,3 +19,7 @@ sync_time = "2024-12-01T21:11:27.531366"
 [resource_sync_states."ZipFunctionSyncFlow:GenerateRoundInfoFunction"]
 hash = "01960941b3da5ea0ef782ccbaac632f726ef836c330c26b85def52b3469d5e84"
 sync_time = "2024-12-02T04:25:57.378239"
+
+[resource_sync_states."ZipFunctionSyncFlow:ExecuteCallbackFunction"]
+hash = "337f77b8ad348652bff4fddbf5755b2f15b4fc74ee9dae4d97731c2a6deabc50"
+sync_time = "2024-12-04T01:10:28.560044"
