@@ -36,4 +36,13 @@ manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
 packagetype = "Zip"
 functions = ["StartGameFunction"]
 
+[function_build_definitions.3f404421-ed72-4915-8f81-29e28407ce8b]
+codeuri = "/home/max/code/photogame/backend/functions/generate_round_info"
+runtime = "python3.13"
+architecture = "x86_64"
+handler = "app.lambda_handler"
+manifest_hash = "d41d8cd98f00b204e9800998ecf8427e"
+packagetype = "Zip"
+functions = ["GenerateRoundInfoFunction"]
+
 [layer_build_definitions]

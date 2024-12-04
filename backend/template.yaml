@@ -11,8 +11,26 @@ Parameters:
   StageName:
     Type: String
     Default: Staging
+  GameBucketName:
+    Type: String
+    Default: game-photo-bucket
 
 Resources:
+  GameBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref GameBucketName
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+            AllowedOrigins:
+              - "*"
+      VersioningConfiguration:
+        Status: Enabled
   GameApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -226,6 +244,19 @@ Resources:
       FunctionName: !Ref StartGameFunction
       Principal: apigateway.amazonaws.com
 
+  GenerateRoundInfoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/generate_round_info/
+      Handler: app.lambda_handler
+      MemorySize: 128
+      Runtime: python3.13
+      Timeout: 15
+      Environment:
+        Variables:
+          bucket_name: !Ref GameBucketName
+
+
   GameStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -249,6 +280,8 @@ Resources:
                 - !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GameApi}/*
       DefinitionUri: statemachine/game.asl.json
     DependsOn: GameApi
+
+
 
 Outputs:
   GameStateMachineArn:

@@ -7,6 +7,8 @@ def lambda_handler(event, context):
     state machine with the callback token and player information to unpause
     the WaitForHost state
 
+    Note: All players must be included in the players array, including the host
+
     Parameters
     ----------
     event: dict, required
@@ -52,8 +54,8 @@ def lambda_handler(event, context):
 
     sfn_client = boto3.client("stepfunctions")
 
-    players = body.get("players", [{"id": "dummy_player1", "connectionId": "dummy_connection_id"}])
-    task_token = body.get("taskToken", "dummy_token")
+    players = body.get("players", [])
+    task_token = body.get("taskToken")
 
     print("Players:", players)
     print("Task token:", task_token)

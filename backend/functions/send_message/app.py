@@ -1,6 +1,7 @@
 import json
 import boto3
 
+
 def lambda_handler(event, context):
     """Called when state machine starts waiting for a player to join
     Sends the host a message to indicate players can join
@@ -29,18 +30,16 @@ def lambda_handler(event, context):
         }
 
     sfn_client = boto3.client("stepfunctions")
-    players = body.get("players", [{"id": "dummy_player1", "connectionId": "dummy_connection_id"}])
-    task_token = body.get("taskToken", "dummy_token")
+    task_token = body.get("taskToken")
 
-    print("Players:", players)
     print("Task token:", task_token)
 
-    sfn_client.send_task_success(
-        taskToken=task_token, output=json.dumps({"players": players})
-    )
+    output = {}
+
+    sfn_client.send_task_success(taskToken=task_token, output=json.dumps(output))
 
     return {
-    'statusCode': 200,
-    'headers': {'Content-Type': 'application/json'},
-    'body': '{"asd":"asd"}'
-}
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/json"},
+        "body": '{"asd":"asd"}',
+    }
