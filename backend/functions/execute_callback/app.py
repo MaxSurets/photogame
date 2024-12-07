@@ -19,28 +19,19 @@ def lambda_handler(event, context):
         dict
     """
     print("The event:", event)
-    try:
-        body = json.loads(event.get("body"))
-    except Exception as e:
-        print("Error parsing body:", e)
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": '{"message":"Error parsing body"}',
-        }
 
     sfn_client = boto3.client("stepfunctions")
-    task_token = body.get("taskToken")
+    task_token = event.get("taskToken")
 
     print("Task token:", task_token)
 
     output = {}
 
-    if event["requestContext"]["routeKey"] == "uploaded_photo":
+    if event["action"] == "uploadedphoto":
         output["uploaded"] = True
         print("Photo uploaded")
-    elif event["requestContext"]["routeKey"] == "vote":
-        output["vote"] = body.get("playerId")
+    elif event["action"] == "vote":
+        output["vote"] = event.get("playerId")
 
     sfn_client.send_task_success(taskToken=task_token, output=json.dumps(output))
 
