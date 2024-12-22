@@ -25,6 +25,10 @@ template_file = "/home/max/code/photogame/backend/template.yaml"
 dependency_layer = false
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-xi4qigaoxhza"
 
+[default.sync.parameters.parameter_overrides]
+GameStateMachineName = "GameLogic"
+StageName = "Staging"
+GameBucketName = "game-photo-bucket"
 [default.local_start_api.parameters]
 warm_containers = "EAGER"
 

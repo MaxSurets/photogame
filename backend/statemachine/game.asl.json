@@ -15,7 +15,9 @@
         "Path": "{% '/@connections/' & $states.input.hostConnectionId %}",
         "QueryParameters": {},
         "RequestBody": {
-          "callbackToken": "{% $states.context.Task.Token %}"
+          "callbackToken": "{% $states.context.Task.Token %}",
+          "room": "{% $states.input.room %}",
+          "hostConnId": "{% $states.input.hostConnectionId %}"
         },
         "AuthType": "IAM_ROLE"
       },
