@@ -4,13 +4,17 @@ import { ActivityIndicator, StyleSheet, Text, TouchableHighlight, View } from 'r
 import userMachine from '../services/apiclient'
 import { useMachine } from '@xstate/react';
 
-export default function App() {
-  const [current, send] = useMachine(userMachine)
+import { StateMachineContext } from '../services/StateMachineProvider'
 
-  const { value, context: { username } } = current
+
+export default function App() {
+  const actor = StateMachineContext.useActorRef();
+  const current = StateMachineContext.useSelector((snapshot) => snapshot.value)
+  const username = StateMachineContext.useSelector((snapshot) => snapshot.context.username)
+
 
   const FetchNewUserButton = () => (
-    <TouchableHighlight style={styles.button} onPress={() => send({ type: 'START' })}>
+    <TouchableHighlight style={styles.button} onPress={() => actor.send({ type: 'START' })}>
       <Text style={styles.subtitle}>Start game</Text>
     </TouchableHighlight>
   )
@@ -18,13 +22,13 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>User App!</Text>
-      {value === 'waiting' && <FetchNewUserButton />}
+      {current === 'waiting' && <FetchNewUserButton />}
 
-      {value === 'loading' && <ActivityIndicator />}
+      {current === 'loading' && <ActivityIndicator />}
 
-      {value === 'failure' && <Text style={styles.subtitle}>An error occurred :(</Text>}
+      {current === 'failure' && <Text style={styles.subtitle}>An error occurred :(</Text>}
 
-      {value === 'success' && (
+      {current === 'success' && (
         <>
           <Text style={styles.joke}>{username}</Text>
           <FetchNewUserButton />

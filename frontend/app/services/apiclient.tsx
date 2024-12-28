@@ -1,7 +1,4 @@
-import { setup, createActor, fromPromise, assign } from 'xstate';
-
-const fetchUser = (userId: string) =>
-  fetch(`https://example.com/${userId}`).then((response) => response.text());
+import { setup, fromPromise, assign } from 'xstate';
 
 function delayedReturn(value, delay): Promise<string> {
   return new Promise(resolve => {
@@ -12,62 +9,126 @@ function delayedReturn(value, delay): Promise<string> {
 }
 
 async function example(id): Promise<string> {
-  return await delayedReturn("Hello World!", 1000);
+  return await delayedReturn('Hello World!', 1000);
 
 }
 
-
-const userMachine = setup({
-  types: {
-    context: {} as {
-      userId: string;
-      username: string;
-      error: unknown;
+const createUserMachine = (navigation) => {
+  return setup({
+    types: {
+      context: {} as {
+        isHost: boolean | unknown;
+        username: string;
+        error: unknown;
+        roomNumber: number | undefined;
+      }
     },
-  },
-  actors: {
-    fetchUser: fromPromise(async ({ input }: { input: { userId } }): Promise<string> => {
-      const user = await example(input.userId);
-
-      return user;
-    }),
-  },
-}).createMachine({
-  id: 'user',
-  initial: 'waiting',
-  context: {
-    userId: '42',
-    username: "",
-    error: undefined,
-  },
-  states: {
-    waiting: {
-      on: {
-        START: { target: 'loading' },
-      },
+    actions: {
+      navigate: (_, params: { to: string }): any => {
+        console.log("Navigating to", params.to)
+        navigation.navigate(params.to)
+      }
     },
-    loading: {
-      invoke: {
-        id: 'getUser',
-        src: 'fetchUser',
-        input: ({ context: { userId } }) => ({ userId }),
-        onDone: {
-          target: 'success',
-          actions: assign({ username: ({ event }) => event.output }),
+    actors: {
+      fetchUser: fromPromise(async ({ input }: { input: { username } }): Promise<string> => {
+        const user = await example(input.username);
+
+        return user;
+      }),
+    },
+    guards: {
+      check_name: ({ context }) => {
+        return context.username.length > 0
+      }
+    }
+  }).createMachine({
+    id: 'user',
+    initial: 'start_screen',
+    context: {
+      isHost: undefined,
+      username: '',
+      error: undefined,
+      roomNumber: undefined,
+    },
+    states: {
+      start_screen: {
+        on: {
+          CREATE_ROOM: {
+            target: 'creating_room',
+            actions: assign({
+              isHost: true,
+            })
+          },
+          JOIN_ROOM: {
+            target: 'joining_room',
+            actions: assign({
+              roomNumber: ({ event }) => event.roomNumber,
+              isHost: false,
+            }),
+          },
         },
-        onError: {
-          target: 'failure',
-          actions: assign({ error: ({ event }) => event.error }),
+      },
+      creating_room: {
+        on: {
+          CREATE: {
+            target: 'waiting',
+            actions: assign({
+              username: ({ event }) => event.username,
+            }),
+          },
+          BACK: {
+            target: 'start_screen',
+            actions: assign({
+              isHost: undefined,
+            })
+          },
         },
       },
-    },
-    success: {},
-    failure: {
-      on: {
-        RETRY: { target: 'loading' },
+      joining_room: {
+        on: {
+          JOIN: {
+            target: 'waiting',
+            actions: assign({
+              username: ({ event }) => event.username,
+            }),
+          },
+          BACK: {
+            target: 'start_screen',
+            actions: assign({
+              isHost: undefined,
+            })
+          },
+        },
       },
-    },
-  },
-})
+      waiting: {
+        entry: [{ type: 'navigate', params: { to: 'waiting_room' } }],
+        on: {
+          START: { target: 'loading' },
+        },
+      },
+      loading: {
+        invoke: {
+          id: 'getUser',
+          src: 'fetchUser',
+          input: ({ context: { username } }) => ({ username }),
+          onDone: {
+            target: 'success',
+            actions: assign({ username: ({ event }) => event.output }),
+          },
+          onError: {
+            target: 'failure',
+            actions: assign({ error: ({ event }) => event.error }),
+          },
+        },
+      },
+      success: {},
+      failure: {
+        on: {
+          RETRY: { target: 'loading' },
+        },
+      },
+    }
+  })
+}
 
-export default userMachine
+export default createUserMachine

@@ -1,13 +1,17 @@
-import { View, StyleSheet, Platform, TextInput, Text } from "react-native";
-import { useState, useRef } from "react";
+import { View, StyleSheet, Platform, TextInput, Text, Modal } from "react-native";
+import { useState } from "react";
 import * as Clipboard from 'expo-clipboard';
-// import { connectWebSocket } from "../services/apiclient"
-
-
+import { StateMachineContext } from '../services/StateMachineProvider'
 import Button from "@/components/Button";
 
 export default function Index() {
+
+  const actor = StateMachineContext.useActorRef();
+  const isHost = StateMachineContext.useSelector((state) => state.context.isHost)
+  const current = StateMachineContext.useSelector((snapshot) => snapshot.value)
+
   const [roomNumber, setRoomNumber] = useState<string>("");
+  const [name, setName] = useState<string>("");
 
 
   let ws;
@@ -23,7 +27,8 @@ export default function Index() {
   }
 
   const joinRoomUsingNumber = async () => {
-    // await connectWebSocket(roomNumber)
+    // TODO: Check room number
+    actor.send({ type: 'JOIN_ROOM', roomNumber: roomNumber })
   }
 
 
@@ -42,15 +47,41 @@ export default function Index() {
           <Button
             theme="primary"
             label="Create Room 🪄"
-            onPress={generateRoomNumber}
+            onPress={() => actor.send({ type: 'CREATE_ROOM' })}
           />
         </View>
+
+        {current === 'creating_room' && (
+          <Modal>
+            <View>
+              <Text>Enter your name</Text>
+              <TextInput
+                onChangeText={setName}
+                value={name}
+                placeholder="ex: jiwonie11"
+              />
+              <Button
+                theme="primary"
+                label="Next"
+                onPress={() => actor.send({ type: 'CREATE', username: name })}
+              // TODO: Disable when username invalid
+              />
+              <Button
+                theme="primary"
+                label="Cancel"
+                onPress={() => actor.send({ type: 'BACK' })}
+              />
+            </View>
+          </Modal>
+        )}
+
+
         <Text style={{}}>--OR--</Text>
+
         <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: "center", backgroundColor: "#fff", height: "50%", width: "100%" }}>
           <TextInput
             placeholder='Enter Room ID'
             style={{
-              // Center text
               textAlign: "center",
               padding: 10,
               borderColor: "gray"
@@ -62,6 +93,31 @@ export default function Index() {
             onPress={joinRoomUsingNumber}
           />
         </View>
+
+        {current === 'joining_room' && (
+          <Modal>
+            <View>
+              <Text>Enter your name</Text>
+              <TextInput
+                onChangeText={setName}
+                value={name}
+                placeholder="ex: jiwonie11"
+              />
+              <Button
+                theme="primary"
+                label="Next"
+                onPress={() => actor.send({ type: 'JOIN', username: name })}
+              // TODO: Disable when username invalid
+              />
+              <Button
+                theme="primary"
+                label="Cancel"
+                onPress={() => actor.send({ type: 'BACK' })}
+              />
+            </View>
+          </Modal>
+        )}
+
       </View>
 
     </View>
