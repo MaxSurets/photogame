@@ -13,13 +13,9 @@ export default function Index() {
   const [roomNumber, setRoomNumber] = useState<string>("");
   const [name, setName] = useState<string>("");
 
-
-  let ws;
-
   const copyToClipboard = async () => {
     await Clipboard.setStringAsync(roomNumber);
   };
-
 
   const generateRoomNumber = () => {
     let roomNumber = Math.floor(Math.random() * 1000000)

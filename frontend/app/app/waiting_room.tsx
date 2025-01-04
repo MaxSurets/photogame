@@ -1,16 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
-import userMachine from '../services/apiclient'
-import { useMachine } from '@xstate/react';
-
 import { StateMachineContext } from '../services/StateMachineProvider'
+import Button from "@/components/Button";
 
 
 export default function App() {
   const actor = StateMachineContext.useActorRef();
   const current = StateMachineContext.useSelector((snapshot) => snapshot.value)
   const username = StateMachineContext.useSelector((snapshot) => snapshot.context.username)
+  const isHost = StateMachineContext.useSelector((snapshot) => snapshot.context.isHost)
+  const players = StateMachineContext.useSelector((snapshot) => snapshot.context.players)
 
 
   const FetchNewUserButton = () => (
@@ -21,19 +21,27 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>User App!</Text>
+      <Text style={styles.title}>Waiting for users to join</Text>
+
+      {/* Simulate player joining */}
+      <Button
+        label="Join"
+        onPress={() => {
+          let player = {username: `Player_${Math.floor(Math.random() * 10)}`}
+          actor.send({ type: 'PLAYER_JOIN', player: player })
+        }}
+      />
+
+      <Text style={styles.subtitle}>{players.length} players joined</Text>
+
+      <Text style={styles.subtitle}>{players.toString()}</Text>
+
       {current === 'waiting' && <FetchNewUserButton />}
 
       {current === 'loading' && <ActivityIndicator />}
 
       {current === 'failure' && <Text style={styles.subtitle}>An error occurred :(</Text>}
 
-      {current === 'success' && (
-        <>
-          <Text style={styles.joke}>{username}</Text>
-          <FetchNewUserButton />
-        </>
-      )}
       <StatusBar style="auto" />
     </View>
   );
