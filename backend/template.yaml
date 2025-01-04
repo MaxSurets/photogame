@@ -287,7 +287,12 @@ Resources:
       Environment:
         Variables:
           bucket_name: !Ref GameBucketName
-
+      Policies: 
+      - Statement:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+          Resource: !Sub arn:aws:s3:::${GameBucketName}/*
 
   GameStateMachine:
     Type: AWS::Serverless::StateMachine
