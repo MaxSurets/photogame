@@ -1,50 +1,55 @@
-const WebSocket = require('ws')
+let WebSocket
+
+if (typeof window !== "undefined" && window.WebSocket) {
+    WebSocket = window.WebSocket // browser or react-native
+} else {
+    WebSocket = require("ws") // node
+}
 
 const wsBaseUrl = "wss://4920segdqe.execute-api.us-east-2.amazonaws.com/Staging/"
 
-async function connectWebSocket(name, room = null) {
+function connectWebSocket(name, room = null) {
     const wsUrl = `${wsBaseUrl}?name=${encodeURIComponent(name)}${room ? `&room=${encodeURIComponent(room)}` : ''}`
 
     return new Promise((resolve, reject) => {
         const socket = new WebSocket(wsUrl)
 
-        socket.on('open', (event) => {
+        socket.onopen = (event) => {
             console.log("[Client] Connected to WebSocket", event)
             resolve(socket)
-        })
+        }
 
-        socket.on('message', (data) => {
+        socket.onmessage = (event) => {
             try {
-                const message = JSON.parse(data.toString())
+                const message = JSON.parse(event.data)
                 console.log("[Client] Message from WebSocket:", message)
             } catch (err) {
                 console.error("[Client] Error parsing WebSocket message:", err)
             }
-        })
+        }
 
-        socket.on('error', (event) => {
-            console.error("[Client] WebSocket error:", event)
-            reject(event)
-        })
+        socket.onerror = (error) => {
+            console.error("[Client] WebSocket error:", error)
+            reject(error)
+        }
 
-        socket.on('close', (event) => {
+        socket.onclose = (event) => {
             console.log("[Client] Disconnected from WebSocket", event)
-        })
+        }
     })
 }
 
 async function makeRequest(connection, payload) {
     if (connection && connection.readyState === WebSocket.OPEN) {
         return new Promise((resolve, reject) => {
-            connection.send(JSON.stringify(payload), (error) => {
-                if (error) {
-                    console.error("[Client] Error while making request through WebSocket", error)
-                    reject(error)
-                } else {
-                    console.log("[Client] Message sent through WebSocket:", payload)
-                    resolve()
-                }
-            })
+            try {
+                connection.send(JSON.stringify(payload))
+                console.log("[Client] Message sent through WebSocket:", payload)
+                resolve()
+            } catch (error) {
+                console.error("[Client] Error while making request through WebSocket", error)
+                reject(error)
+            }
         })
     } else {
         const errorMsg = "[Client] WebSocket is not open"
