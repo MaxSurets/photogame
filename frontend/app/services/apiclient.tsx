@@ -8,7 +8,7 @@ function delayedReturn(value, delay): Promise<string> {
   });
 }
 
-async function start_game(players): Promise<string> {
+async function establish_connection(players, isHost): Promise<string> {
   // Starts the game by sending the players to the server
   return await delayedReturn(players, 1000);
 
@@ -42,11 +42,11 @@ const createUserMachine = (navigation) => {
       }
     },
     actors: {
-      sendPlayers: fromPromise(async ({ input }: { input: { players } }): Promise<string> => {
-        console.log("Starting game", input)
-        const status = await start_game(input.players);
+      sendPlayers: fromPromise(async ({ input }: { input: { players, isHost } }): Promise<string> => {
+        console.log("Starting/joining game", input)
+        const conn = await establish_connection(input.players, input.isHost);
 
-        return status;
+        return conn;
       }),
     },
     guards: {
@@ -68,6 +68,7 @@ const createUserMachine = (navigation) => {
       round: 0,
       votes_for_round: {},
       scores: {},
+
     },
     states: {
       start_screen: {
@@ -139,7 +140,7 @@ const createUserMachine = (navigation) => {
         invoke: {
           id: 'start_game',
           src: 'sendPlayers',
-          input: ({ context: { players } }) => ({ players }),
+          input: ({ context: { players, isHost } }) => ({ players, isHost }),
           onDone: {
             target: 'game',
             actions: assign({ username: ({ event }) => event.output }),
