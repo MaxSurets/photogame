@@ -1,6 +1,6 @@
 import { setup, fromPromise, assign } from 'xstate';
 
-function delayedReturn(value, delay): Promise<string> {
+function delayedReturn(value, delay): Promise<object> {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve(value);
@@ -8,9 +8,9 @@ function delayedReturn(value, delay): Promise<string> {
   });
 }
 
-async function establish_connection(players, isHost): Promise<string> {
+function establish_connection(players, isHost, username): Promise<object> {
   // Starts the game by sending the players to the server
-  return await delayedReturn(players, 1000);
+  return delayedReturn(players, 1000);
 
 }
 
@@ -27,7 +27,8 @@ const createUserMachine = (navigation) => {
         prompt: string;
         round: number;
         votes_for_round: { [key: string]: string }
-        scores: { [key: string]: number }
+        scores: { [key: string]: number },
+        conn: object;
       }
     },
     actions: {
@@ -42,9 +43,9 @@ const createUserMachine = (navigation) => {
       }
     },
     actors: {
-      sendPlayers: fromPromise(async ({ input }: { input: { players, isHost } }): Promise<string> => {
-        console.log("Starting/joining game", input)
-        const conn = await establish_connection(input.players, input.isHost);
+      sendPlayers: fromPromise(async ({ input }: { input: { players, isHost, username } }) => {
+        console.log("Starting or joining game", input)
+        const conn = await establish_connection(input.players, input.isHost, input.username);
 
         return conn;
       }),
@@ -68,7 +69,7 @@ const createUserMachine = (navigation) => {
       round: 0,
       votes_for_round: {},
       scores: {},
-
+      conn: {},
     },
     states: {
       start_screen: {
@@ -140,10 +141,10 @@ const createUserMachine = (navigation) => {
         invoke: {
           id: 'start_game',
           src: 'sendPlayers',
-          input: ({ context: { players, isHost } }) => ({ players, isHost }),
+          input: ({ context: { players, isHost, username } }) => ({ players, isHost, username }),
           onDone: {
             target: 'game',
-            actions: assign({ username: ({ event }) => event.output }),
+            actions: assign({ conn: ({ event }) => event.output }),
           },
           onError: {
             target: 'failure',
