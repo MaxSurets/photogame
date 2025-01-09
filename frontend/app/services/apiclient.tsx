@@ -1,4 +1,5 @@
 import { setup, fromPromise, assign } from 'xstate';
+import { connectWebSocket, makeRequest, startGame, disconnectWebSocket } from './ws-client';
 
 function delayedReturn(value, delay): Promise<object> {
   return new Promise(resolve => {
@@ -8,10 +9,47 @@ function delayedReturn(value, delay): Promise<object> {
   });
 }
 
-function establish_connection(players, isHost, username): Promise<object> {
-  // Starts the game by sending the players to the server
-  return delayedReturn(players, 1000);
+function establish_connection(players, isHost, username, roomNumber=null): Promise<object> {
+  return new Promise(async (resolve, reject) => {
+    try {
+        let connection;
+        if (isHost) {
+            connection = await connectWebSocket(username);
+            let roomId = null;
+            connection.on('message', (data) => {
+                try {
+                    const message = JSON.parse(data.toString());
+                    if (message.room) {
+                        roomId = message.room;
+                        players.push({ id: 'host', connectionId: message.hostConnId });
+                    }
+                    if (message.action === 'playerJoined') {
+                        players.push({ id: message.player.id, connectionId: message.player.connectionId });
+                    }
+                } catch {
+                    console.log('Error parsing message');
+                }
+            });
+            resolve({ connection, roomId });
+        } else {
+            if (!roomNumber) {
+                return reject(new Error('Room ID is required to join as a player.'));
+            }
+            connection = await connectWebSocket(username, roomNumber);
+            connection.on('message', (data) => {
+                try {
+                    const message = JSON.parse(data.toString());
+                } catch {
+                    console.log('Error parsing message');
+                }
+            });
 
+            resolve({ connection });
+        }
+    } catch (error) {
+        reject(error);
+    }
+  });
 }
 
 const createUserMachine = (navigation) => {
@@ -43,9 +81,9 @@ const createUserMachine = (navigation) => {
       }
     },
     actors: {
-      sendPlayers: fromPromise(async ({ input }: { input: { players, isHost, username } }) => {
+      sendPlayers: fromPromise(async ({ input }: { input: { players, isHost, username, roomNumber } }) => {
         console.log("Starting or joining game", input)
-        const conn = await establish_connection(input.players, input.isHost, input.username);
+        const conn = await establish_connection(input.players, input.isHost, input.username, input.roomNumber);
 
         return conn;
       }),
