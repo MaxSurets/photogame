@@ -91,7 +91,7 @@ def lambda_handler(event, context):
         }
 
     else:
-        room_id = str(random.randint(100, 999))
+        room_id = str(random.randint(1000, 9999))
         print("Creating room with ID:", room_id)
         try:
             sfn_client.start_execution(

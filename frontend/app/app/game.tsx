@@ -18,8 +18,9 @@ const renderSnapshotValue = (value) => {
 export default function Game() {
 
     const prompt = useSelector(actor, (state) => state.context.prompt)
-    const round = useSelector(actor,(state) => state.context.round)
-    const current = renderSnapshotValue(useSelector(actor,(snapshot) => snapshot.value))
+    const round = useSelector(actor, (state) => state.context.round)
+    const uploadUrl = useSelector(actor, (state) => state.context.uploadUrl)
+    const current = renderSnapshotValue(useSelector(actor, (snapshot) => snapshot.value))
 
     console.log("Current", current)
 
@@ -36,12 +37,15 @@ export default function Game() {
             case "game.waiting_for_uploads":
                 return (
                     <View className="items-center justify-center p-6 space-y-10">
+                        <Text className="text-white">Prompt: {prompt}</Text>
+                        <Text className="text-white">Upload URL: {uploadUrl}</Text>
                         <Text className="text-white">Placeholder for image picker component</Text>
                     </View>
                 )
             case "game.waiting_for_votes":
                 return (
                     <View className="items-center justify-center p-6 space-y-10">
+                        <Text className="text-white">Prompt: {prompt}</Text>
                         <Text className="text-white">Placeholder for voting component</Text>
                     </View>
                 )
@@ -69,7 +73,10 @@ export default function Game() {
             </View>
             <View>
                 <Text>Upload:</Text>
-                <Button label='Upload' onPress={() => actor.send({ type: 'upload' })} />
+                <Button label='Upload' onPress={() => {
+                    console.log("Uploading photo to", uploadUrl)
+                    actor.send({ type: 'upload' })
+                }} />
             </View>
 
 

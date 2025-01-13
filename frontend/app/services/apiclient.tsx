@@ -34,7 +34,7 @@ function establish_connection(players, isHost, username, roomNumber = null): Pro
               console.log("Player joined", message.player)
               actor.send({ type: 'PLAYER_JOIN', player: message.player })
             } else if (message.action === 'startRound') {
-              actor.send({ type: 'GET_PROMPT', prompt: message.prompt, round: message.round })
+              actor.send({ type: 'GET_PROMPT', prompt: message.prompt, round: message.round, uploadUrl: message.uploadUrl })
             }
             if (message.callbackToken) {
               callbackToken = message.callbackToken;
@@ -62,8 +62,8 @@ function establish_connection(players, isHost, username, roomNumber = null): Pro
               callbackToken = message.callbackToken;
             }
             if (message.action === 'startRound') {
-              actor.send({ type: 'PLAYER_START'})
-              actor.send({ type: 'GET_PROMPT', prompt: message.prompt, round: message.round })
+              actor.send({ type: 'PLAYER_START' })
+              actor.send({ type: 'GET_PROMPT', prompt: message.prompt, round: message.round, uploadUrl: message.uploadUrl })
             }
           } catch (err) {
             console.log('Error parsing message:', err);
@@ -103,10 +103,11 @@ const stateMachine = setup({
       maxRounds: number;
       prompt: string;
       round: number;
-      votes_for_round: { [key: string]: string }
-      scores: { [key: string]: number },
+      votes_for_round: { [key: string]: string };
+      scores: { [key: string]: number };
       conn: object;
       isFirstVisit: boolean;
+      uploadUrl: string;
     }
   },
   actions: {
@@ -115,6 +116,9 @@ const stateMachine = setup({
       console.log("Navigating to", params.to)
       router.replace({ pathname: params.to, params: rest })
     },
+    upload: (context: { conn }, params): any => {
+      context.conn.send(JSON.stringify({ action: 'uploadedphoto' }))
+    }
 
   },
   actors: {
@@ -165,6 +169,7 @@ const stateMachine = setup({
     scores: {},
     conn: {},
     isFirstVisit: false,
+    uploadUrl: ''
   },
   initial: 'start',
   states: {
@@ -266,10 +271,10 @@ const stateMachine = setup({
       },
     },
     waiting: {
-      entry: [{
-        type: 'navigate',
-        params: ({ context }) => ({ to: 'waiting_room/[id]', id: context.roomNumber })
-      }],
+      // entry: [{
+      //   type: 'navigate',
+      //   params: ({ context }) => ({ to: 'waiting_room/[id]', id: context.roomNumber })
+      // }],
       invoke: {
         id: 'establishConnection',
         src: 'establishConnection',
@@ -335,6 +340,7 @@ const stateMachine = setup({
               target: 'waiting_for_uploads',
               actions: assign({
                 prompt: ({ event }) => event.prompt,
+                uploadUrl: ({ event }) => event.uploadUrl,
                 round: ({ context }) => context.round + 1,
               }),
             },

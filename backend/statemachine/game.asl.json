@@ -119,7 +119,8 @@
               "Path": "{% '/@connections/' & $states.input.connectionId %}",
               "QueryParameters": {},
               "RequestBody": {
-                "callbackToken": "{% $states.context.Task.Token %}"
+                "callbackToken": "{% $states.context.Task.Token %}",
+                "action": "vote"
               },
               "AuthType": "IAM_ROLE"
             },
@@ -150,7 +151,8 @@
               "Path": "{% '/@connections/' & $states.input.connectionId %}",
               "QueryParameters": {},
               "RequestBody": {
-                "results": "{% $votes %}"
+                "results": "{% $votes %}",
+                "action": "showResults"
               },
               "AuthType": "IAM_ROLE"
             },
