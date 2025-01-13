@@ -84,7 +84,8 @@
                 "callbackToken": "{% $states.context.Task.Token %}",
                 "uploadUrl": "{% $states.input.uploadUrl %}",
                 "prompt": "{% $prompt %}",
-                "round": "{% $round %}"
+                "round": "{% $round %}",
+                "action": "startRound"
               },
               "AuthType": "IAM_ROLE"
             },

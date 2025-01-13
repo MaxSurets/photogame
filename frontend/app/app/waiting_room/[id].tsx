@@ -13,7 +13,7 @@ import * as Sharing from 'expo-sharing';
 
 export default function App() {
   const current = useSelector(actor, (snapshot) => snapshot.value)
-  const players =useSelector(actor, (snapshot) => snapshot.context.players)
+  const players = useSelector(actor, (snapshot) => snapshot.context.players)
   const isHost = useSelector(actor, (snapshot) => snapshot.context.isHost)
   const roomNumber = useSelector(actor, (snapshot) => snapshot.context.roomNumber)
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,7 +26,7 @@ export default function App() {
           <View key={i} className="h-24 w-24 m-2 bg-neutral-700 outline outline-1 outline-neutral-600 rounded-xl flex-col justify-center items-center space-y-2">
 
             <FontAwesome name="user-o" size={24} color="black" />
-            <Text className="text-white">{player.username}</Text>
+            <Text className="text-white">{player.id}</Text>
 
           </View>
         )
@@ -88,22 +88,19 @@ export default function App() {
           }}
         />
 
-        <View>
+
+        {(current === 'waiting' && isHost === true) && <View>
           <Text className="text-white text-center mb-2">{players.length} players joined</Text>
           <View className="h-72 w-full flex-row flex-wrap justify-evenly items-center mx-auto overflow-y-scroll">
             {renderPlayers(players)}
           </View>
-
-        </View>
-
-
-
-        {(current === 'waiting' && isHost === true) && <Button
-          label="Start Game"
-          size="lg"
-          className="bg-neutral-900"
-          onPress={() => actor.send({ type: 'START' })}
-        />}
+          <Button
+            label="Start Game"
+            size="lg"
+            className="bg-neutral-900"
+            onPress={() => actor.send({ type: 'HOST_START' })}
+          />
+        </View>}
 
         {current === 'loading' && <ActivityIndicator />}
 
