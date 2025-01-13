@@ -1,5 +1,7 @@
 import { setup, fromPromise, assign } from 'xstate';
 import { connectWebSocket, makeRequest, startGame, disconnectWebSocket } from './ws-client';
+import { configureLayoutAnimationBatch } from 'react-native-reanimated/lib/typescript/core';
+import { actor } from './StateMachineProvider';
 
 function delayedReturn(value, delay): Promise<object> {
   return new Promise(resolve => {
@@ -9,47 +11,77 @@ function delayedReturn(value, delay): Promise<object> {
   });
 }
 
-function establish_connection(players, isHost, username, roomNumber=null): Promise<object> {
+function establish_connection(players, isHost, username, roomNumber = null): Promise<object> {
   return new Promise(async (resolve, reject) => {
     try {
-        let connection;
-        if (isHost) {
-            connection = await connectWebSocket(username);
-            let roomId = null;
-            connection.on('message', (data) => {
-                try {
-                    const message = JSON.parse(data.toString());
-                    if (message.room) {
-                        roomId = message.room;
-                        players.push({ id: 'host', connectionId: message.hostConnId });
-                    }
-                    if (message.action === 'playerJoined') {
-                        players.push({ id: message.player.id, connectionId: message.player.connectionId });
-                    }
-                } catch {
-                    console.log('Error parsing message');
-                }
-            });
-            resolve({ connection, roomId });
-        } else {
-            if (!roomNumber) {
-                return reject(new Error('Room ID is required to join as a player.'));
-            }
-            connection = await connectWebSocket(username, roomNumber);
-            connection.on('message', (data) => {
-                try {
-                    const message = JSON.parse(data.toString());
-                } catch {
-                    console.log('Error parsing message');
-                }
-            });
+      let connection;
+      let roomId = null;
+      let callbackToken = null;
 
-            resolve({ connection });
-        }
+      if (isHost) {
+        connection = await connectWebSocket(username);
+        connection.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.room) {
+              roomId = message.room;
+              players.push({ id: 'host', connectionId: message.hostConnId });
+            }
+            if (message.action === 'playerJoined') {
+              console.log("Player joined", message.player)
+              //players.push({ id: message.player.id, connectionId: message.player.connectionId });
+              actor.send({ type: 'PLAYER_JOIN', player: message.player })
+              //console.log("PLAYERS: ", players)
+            }
+            if (message.callbackToken) {
+              callbackToken = message.callbackToken;
+            }
+          } catch (err) {
+            console.log('Error parsing message:', err);
+          }
+        };
+
+        const waitForRoom = async () => {
+          while (!roomId || !callbackToken) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          resolve({ connection, roomId, callbackToken });
+        };
+        waitForRoom();
+      } else {
+        if (!roomNumber) return reject(new Error('Room ID is required to join as a player.'));
+        connection = await connectWebSocket(username, roomNumber);
+        connection.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.callbackToken) {
+              callbackToken = message.callbackToken;
+            }
+          } catch (err) {
+            console.log('Error parsing message:', err);
+          }
+        };
+        const waitForCallbackToken = async () => {
+          while (!callbackToken) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          resolve({ connection, callbackToken });
+        };
+        waitForCallbackToken();
+      }
     } catch (error) {
-        reject(error);
+      reject(error);
     }
   });
+}
+
+async function initiateGame(connection, callbackToken, players, isHost) {
+  if (!isHost) throw new Error('Only the host can start the game.');
+  if (!callbackToken) throw new Error('Callback token is required to start the game.');
+  console.log("players: ", players)
+  if (!players || players.length > 1) throw new Error('More than one player is required to start the game.');
+  await startGame(connection, callbackToken, players);
+  return { success: true, message: 'Game started successfully.' };
 }
 
 const createUserMachine = (navigation) => {
@@ -81,11 +113,32 @@ const createUserMachine = (navigation) => {
       }
     },
     actors: {
+      establishConnection: fromPromise(async ({ input }: { input: { players, isHost, username, roomNumber } }) => {
+        try {
+          console.log("Establishing connection", input)
+          const conn:any = await establish_connection(input.players, input.isHost, input.username, input.roomNumber);
+          console.log("Connection established", conn)
+          return conn;
+        } catch (error) {
+          console.log("Error establishing connection", error)
+          throw error;
+        }
+      }), 
       sendPlayers: fromPromise(async ({ input }: { input: { players, isHost, username, roomNumber } }) => {
-        console.log("Starting or joining game", input)
-        const conn = await establish_connection(input.players, input.isHost, input.username, input.roomNumber);
+        try{
+          console.log("Starting or joining game", input)
+          // get conn from context
+         // const conn:any = await establish_connection(input.players, input.isHost, input.username, input.roomNumber);
+          console.log("Connection established", conn)
+          console.log("input.players", input.players)
+          console.log("input.isHost", input.isHost)
+          //await initiateGame(conn.connection, conn.callbackToken, input.players, input.isHost);
+          return conn;
+          } catch (error) {
+            console.log("Error establishing connection", error)
+            throw error;
+          }
 
-        return conn;
       }),
     },
     guards: {
@@ -161,11 +214,17 @@ const createUserMachine = (navigation) => {
         },
       },
       waiting: {
+        invoke: {
+          id: 'establishConnection',
+          src: 'establishConnection',
+          input: ({ context }) => ({ players: context.players, isHost: context.isHost, username: context.username, roomNumber: context.roomNumber }),
+        },
         entry: [{ type: 'navigate', params: { to: 'waiting_room' } }],
         on: {
-          PLAYER_JOIN: {
+          PLAYER_JOIN: { // recieve {player, connId} add to context.players so we can send to socket
             actions: assign({
               players: ({ context, event }) => {
+                console.log("IN PLAYER_JOIN")
                 console.log("Player joined", event.player)
                 console.log("Current players", context.players)
                 return [...context.players, event.player]

@@ -10,7 +10,7 @@ const wsBaseUrl = "wss://4920segdqe.execute-api.us-east-2.amazonaws.com/Staging/
 
 function connectWebSocket(name, room = null) {
     const wsUrl = `${wsBaseUrl}?name=${encodeURIComponent(name)}${room ? `&room=${encodeURIComponent(room)}` : ''}`
-
+    console.log("ROOM ID: ", room)
     return new Promise((resolve, reject) => {
         const socket = new WebSocket(wsUrl)
 

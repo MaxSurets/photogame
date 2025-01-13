@@ -77,6 +77,8 @@ export default function Index() {
         <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: "center", backgroundColor: "#fff", height: "50%", width: "100%" }}>
           <TextInput
             placeholder='Enter Room ID'
+            value={roomNumber}
+            onChangeText={setRoomNumber}
             style={{
               textAlign: "center",
               padding: 10,
@@ -102,7 +104,7 @@ export default function Index() {
               <Button
                 theme="primary"
                 label="Next"
-                onPress={() => actor.send({ type: 'JOIN', username: name })}
+                onPress={() => actor.send({ type: 'JOIN', username: name, roomNumber: roomNumber })}
               // TODO: Disable when username invalid
               />
               <Button
