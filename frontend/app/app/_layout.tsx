@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { actor } from "../services/StateMachineProvider";
+import { actor } from "../services/apiclient";
 import { useEffect } from "react"
 import "../global.css";
 

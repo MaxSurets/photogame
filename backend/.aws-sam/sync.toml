@@ -21,5 +21,5 @@ hash = "01960941b3da5ea0ef782ccbaac632f726ef836c330c26b85def52b3469d5e84"
 sync_time = "2024-12-02T04:25:57.378239"
 
 [resource_sync_states."ZipFunctionSyncFlow:ExecuteCallbackFunction"]
-hash = "3b9f195665c9e2a85e196e7a68e7d856a373bdead192b9495ef8bf7948643263"
-sync_time = "2024-12-07T18:00:10.874231"
+hash = "51006a80d965128a36bbdadea8095830a357e71272254de30519f4e35739ba78"
+sync_time = "2025-01-13T04:45:12.056871"

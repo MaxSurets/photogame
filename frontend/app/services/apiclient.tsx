@@ -3,15 +3,8 @@ import { checkFirstTimeVisit } from '@/services/storage';
 import { router } from 'expo-router';
 
 import { connectWebSocket, makeRequest, startGame, disconnectWebSocket } from './ws-client';
-import { actor } from './StateMachineProvider';
+import { createActor } from "xstate";
 
-function delayedReturn(value, delay): Promise<object> {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(value);
-    }, delay);
-  });
-}
 
 function establish_connection(players, isHost, username, roomNumber = null): Promise<object> {
   return new Promise(async (resolve, reject) => {
@@ -34,7 +27,15 @@ function establish_connection(players, isHost, username, roomNumber = null): Pro
               console.log("Player joined", message.player)
               actor.send({ type: 'PLAYER_JOIN', player: message.player })
             } else if (message.action === 'startRound') {
-              actor.send({ type: 'GET_PROMPT', prompt: message.prompt, round: message.round, uploadUrl: message.uploadUrl })
+              actor.send({
+                type: 'GET_PROMPT',
+                prompt: message.prompt,
+                round: message.round,
+                uploadUrl: message.uploadUrl,
+                callbackToken: message.callbackToken
+              })
+            } else if (message.action === 'vote') {
+              actor.send({ type: 'UPLOADS_DONE', callbackToken: message.callbackToken })
             }
             if (message.callbackToken) {
               callbackToken = message.callbackToken;
@@ -62,20 +63,28 @@ function establish_connection(players, isHost, username, roomNumber = null): Pro
               callbackToken = message.callbackToken;
             }
             if (message.action === 'startRound') {
-              actor.send({ type: 'PLAYER_START' })
-              actor.send({ type: 'GET_PROMPT', prompt: message.prompt, round: message.round, uploadUrl: message.uploadUrl })
+              actor.send({ type: 'PLAYER_START', conn: connection })
+              actor.send({
+                type: 'GET_PROMPT',
+                prompt: message.prompt,
+                round: message.round,
+                uploadUrl: message.uploadUrl,
+                callbackToken: message.callbackToken
+              })
+            } else if (message.action === 'vote') {
+              actor.send({ type: 'UPLOADS_DONE', callbackToken: message.callbackToken })
             }
           } catch (err) {
             console.log('Error parsing message:', err);
           }
         };
-        // const waitForCallbackToken = async () => {
-        //   while (!callbackToken) {
-        //     await new Promise((resolve) => setTimeout(resolve, 100));
-        //   }
-        //   resolve({ connection, callbackToken });
-        // };
-        // waitForCallbackToken();
+        const waitForCallbackToken = async () => {
+          while (!callbackToken) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          resolve({ connection, roomId, callbackToken });
+        };
+        waitForCallbackToken();
       }
     } catch (error) {
       reject(error);
@@ -108,6 +117,7 @@ const stateMachine = setup({
       conn: object;
       isFirstVisit: boolean;
       uploadUrl: string;
+      callbackToken: string;
     }
   },
   actions: {
@@ -116,33 +126,54 @@ const stateMachine = setup({
       console.log("Navigating to", params.to)
       router.replace({ pathname: params.to, params: rest })
     },
-    upload: (context: { conn }, params): any => {
-      context.conn.send(JSON.stringify({ action: 'uploadedphoto' }))
-    }
+    assignVotes: assign(({ context, event }) => {
+      console.log("Assigning votes", context, event)
+      const players = Object.values(context.players).map(player => player.id)
+      const votes_for_round = event.votes
+      const scores = context.scores
+      let final_scores = {}
 
+      for (const player of players) {
+        const votes_for_player = votes_for_round[player] ?? []
+        const player_score = scores[player] ?? 0
+        final_scores[player] = player_score + votes_for_player.length
+      }
+
+      return {
+        votes_for_round: votes_for_round,
+        scores: final_scores
+      }
+    })
   },
   actors: {
     establishConnection: fromPromise(async ({ input }: { input: { players, isHost, username, roomNumber } }) => {
       try {
         console.log("Establishing connection", input)
-        const conn: any = await establish_connection(input.players, input.isHost, input.username, input.roomNumber);
-        console.log("Connection established", conn)
-        return conn;
+        const res: any = await establish_connection(input.players, input.isHost, input.username, input.roomNumber);
+        console.log("Connection established", res)
+        return res;
       } catch (error) {
         console.log("Error establishing connection", error)
         throw error;
       }
     }),
-    sendPlayers: fromPromise(async ({ input }: { input: { players, isHost, username, roomNumber, conn } }) => {
+    sendPlayers: fromPromise(async ({ input }: { input: { players, isHost, username, roomNumber, conn, callbackToken } }) => {
       try {
         console.log("Starting or joining game", input)
 
-        await initiateGame(input.conn.connection, input.conn.callbackToken, input.players, input.isHost);
+        await initiateGame(input.conn, input.callbackToken, input.players, input.isHost);
         return input.conn;
       } catch (error) {
         console.log("Error establishing connection", error)
         throw error;
       }
+    }),
+    upload: fromPromise(async ({ input }: { input: { conn, callbackToken } }) => {
+      const body = { action: 'uploadedphoto', taskToken: input.callbackToken }
+      console.log("Sending message", body)
+      const string_body = JSON.stringify(body)
+      const result = await input.conn.send(string_body)
+      console.log("Result of finishing upload", result)
     }),
     checkFirstTimeVisit: fromPromise(async (): Promise<boolean> => {
       const isFirstVisit = await checkFirstTimeVisit();
@@ -169,7 +200,8 @@ const stateMachine = setup({
     scores: {},
     conn: {},
     isFirstVisit: false,
-    uploadUrl: ''
+    uploadUrl: '',
+    callbackToken: '',
   },
   initial: 'start',
   states: {
@@ -271,10 +303,10 @@ const stateMachine = setup({
       },
     },
     waiting: {
-      // entry: [{
-      //   type: 'navigate',
-      //   params: ({ context }) => ({ to: 'waiting_room/[id]', id: context.roomNumber })
-      // }],
+      entry: [{
+        type: 'navigate',
+        params: ({ context }) => ({ to: 'waiting_room/[id]', id: context.roomNumber })
+      }],
       invoke: {
         id: 'establishConnection',
         src: 'establishConnection',
@@ -282,8 +314,9 @@ const stateMachine = setup({
         onDone: {
           actions: [
             assign({
-              conn: ({ event }) => event.output,
-              roomNumber: ({ event }) => event.output.roomId
+              conn: ({ event }) => event.output.connection,
+              roomNumber: ({ event }) => event.output.roomId,
+              callbackToken: ({ event }) => event.output.callbackToken
             }),
             {
               type: 'navigate',
@@ -307,14 +340,19 @@ const stateMachine = setup({
           })
         },
         HOST_START: { target: 'loading' },
-        PLAYER_START: { target: 'game' },
+        PLAYER_START: {
+          target: 'game',
+          actions: assign({
+            conn: ({ event }) => event.conn
+          }),
+        },
       },
     },
     loading: {
       invoke: {
         id: 'start_game',
         src: 'sendPlayers',
-        input: ({ context: { players, isHost, username, conn } }) => ({ players, isHost, username, conn }),
+        input: ({ context: { players, isHost, username, conn, callbackToken } }) => ({ players, isHost, username, conn, callbackToken }),
         onDone: {
           target: 'game',
           actions: assign({ conn: ({ event }) => event.output }),
@@ -342,36 +380,44 @@ const stateMachine = setup({
                 prompt: ({ event }) => event.prompt,
                 uploadUrl: ({ event }) => event.uploadUrl,
                 round: ({ context }) => context.round + 1,
+                callbackToken: ({ event }) => event.callbackToken,
               }),
             },
           },
         },
         waiting_for_uploads: {
           on: {
+            UPLOAD: {
+              target: 'uploading'
+            },
             UPLOADS_DONE: {
               target: 'waiting_for_votes',
+              actions: assign({
+                callbackToken: ({ event }) => event.callbackToken
+              }),
             },
           },
+        },
+        uploading: {
+          invoke: {
+            id: 'upload',
+            src: 'upload',
+            input: ({ context: { conn, callbackToken } }) => ({ conn, callbackToken }),
+          },
+          on: {
+            UPLOADS_DONE: {
+              target: 'waiting_for_votes',
+              actions: assign({
+                callbackToken: ({ event }) => event.callbackToken
+              }),
+            },
+          }
         },
         waiting_for_votes: {
           on: {
             VOTES_DONE: {
               target: 'round_over',
-              actions: assign({
-                votes_for_round: ({ event }) => event.votes,
-                scores: ({ event, context }) => {
-                  const players = Object.values(context.players).map(player => player.name)
-                  const votes_for_round = event.votes
-                  const scores = context.scores
-                  let final_scores = {}
-                  for (const player of players) {
-                    const votes_for_player = votes_for_round[player] ?? []
-                    const player_score = scores[player] ?? 0
-                    final_scores[player] = player_score + votes_for_player.length
-                  }
-                  return final_scores
-                },
-              }),
+              actions: { type: "assignVotes" }
             },
           },
         },
@@ -404,4 +450,4 @@ const stateMachine = setup({
   }
 })
 
-export default stateMachine
+export const actor = createActor(stateMachine)

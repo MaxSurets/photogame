@@ -1,6 +1,6 @@
 import { View, TextInput, Text } from "react-native";
 import React, { useState } from "react";
-import { actor } from '@/services/StateMachineProvider'
+import { actor } from '@/services/apiclient'
 import { useSelector } from '@xstate/react';
 import Button from "@/components/Button";
 import StyledModal from "@/components/StyledModal";

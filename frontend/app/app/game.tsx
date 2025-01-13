@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import { useSelector } from '@xstate/react';
-import { actor } from '@/services/StateMachineProvider'
+import { actor } from '@/services/apiclient'
 import Button from "@/components/Button";
 import React from "react";
 
@@ -75,7 +75,9 @@ export default function Game() {
                 <Text>Upload:</Text>
                 <Button label='Upload' onPress={() => {
                     console.log("Uploading photo to", uploadUrl)
-                    actor.send({ type: 'upload' })
+                    // TODO: Upload photo to presigned url
+                    
+                    actor.send({ type: 'UPLOAD' })
                 }} />
             </View>
 

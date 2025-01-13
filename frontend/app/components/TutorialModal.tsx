@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import Button from "@/components/Button";
-import { actor } from '@/services/StateMachineProvider'
+import { actor } from '@/services/apiclient'
 import { setFirstTimeVisit } from "@/services/storage";
 import StyledModal from "./StyledModal";
 

@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, TextInput, View } from 'react-native';
-import { actor } from '@/services/StateMachineProvider'
+import { actor } from '@/services/apiclient'
 import { useSelector } from '@xstate/react';
 import Button from "@/components/Button";
 import { useLocalSearchParams } from 'expo-router';

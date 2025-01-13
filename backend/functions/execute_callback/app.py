@@ -21,16 +21,17 @@ def lambda_handler(event, context):
     print("The event:", event)
 
     sfn_client = boto3.client("stepfunctions")
-    task_token = event.get("taskToken")
+    body = json.loads(event.get("body"))
+    task_token = body.get("taskToken")
 
     print("Task token:", task_token)
 
     output = {}
 
-    if event["action"] == "uploadedphoto":
+    if body["action"] == "uploadedphoto":
         output["uploaded"] = True
         print("Photo uploaded")
-    elif event["action"] == "vote":
+    elif body["action"] == "vote":
         output["vote"] = event.get("playerId")
 
     sfn_client.send_task_success(taskToken=task_token, output=json.dumps(output))
