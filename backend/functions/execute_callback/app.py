@@ -32,7 +32,8 @@ def lambda_handler(event, context):
         output["uploaded"] = True
         print("Photo uploaded")
     elif body["action"] == "vote":
-        output["vote"] = event.get("playerId")
+        output["vote"] = body.get("vote")
+        output["voter"] = body.get("voter")
 
     sfn_client.send_task_success(taskToken=task_token, output=json.dumps(output))
 

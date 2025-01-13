@@ -83,12 +83,13 @@ export default function Game() {
 
 
             {/* Simulation buttons */}
-            <View className="h-16 overflow-scroll">
-                <Button label='Simulate getting prompt' onPress={() => actor.send({ type: 'GET_PROMPT', prompt: "Test prompt" })} />
+            <View className="h-32 overflow-scroll">
+                {/* <Button label='Simulate getting prompt' onPress={() => actor.send({ type: 'GET_PROMPT', prompt: "Test prompt" })} />
+                <Button label='Simulate uploads done message' onPress={() => actor.send({ type: 'UPLOADS_DONE' })} /> */}
 
-                <Button label='Simulate uploads done message' onPress={() => actor.send({ type: 'UPLOADS_DONE' })} />
 
-                <Button label='Simulate votes done message' onPress={() => actor.send({ type: 'VOTES_DONE', votes: { Player_1: "Player_2" } })} />
+                <Button label='Vote for p2' onPress={() => actor.send({ type: 'VOTE', vote: "p2" })} />
+                <Button label='Simulate votes done message' onPress={() => actor.send({ type: 'VOTES_DONE', votes: { p1: "p2" } })} />
 
                 <Button label='Simulate next round' onPress={() => actor.send({ type: 'NEXT_ROUND' })} />
             </View>

@@ -170,10 +170,17 @@ const stateMachine = setup({
     }),
     upload: fromPromise(async ({ input }: { input: { conn, callbackToken } }) => {
       const body = { action: 'uploadedphoto', taskToken: input.callbackToken }
-      console.log("Sending message", body)
+      console.log("Sending upload message", body)
       const string_body = JSON.stringify(body)
       const result = await input.conn.send(string_body)
       console.log("Result of finishing upload", result)
+    }),
+    vote: fromPromise(async ({ input }: { input: { conn, callbackToken, username, vote } }) => {
+      const body = { action: 'vote', taskToken: input.callbackToken, voter: input.username, vote: input.vote}
+      console.log("Sending vote message", body)
+      const string_body = JSON.stringify(body)
+      const result = await input.conn.send(string_body)
+      console.log("Result of finishing vote", result)
     }),
     checkFirstTimeVisit: fromPromise(async (): Promise<boolean> => {
       const isFirstVisit = await checkFirstTimeVisit();
@@ -415,11 +422,28 @@ const stateMachine = setup({
         },
         waiting_for_votes: {
           on: {
+            VOTE: {
+              target: 'voting',
+            },
             VOTES_DONE: {
               target: 'round_over',
               actions: { type: "assignVotes" }
             },
           },
+        },
+        voting: {
+          invoke: {
+            id: 'vote',
+            src: 'vote',
+            input: ({ context: { conn, callbackToken, username }, event: { vote } }) => ({ conn, callbackToken, username, vote }),
+          },
+          on: {
+            VOTES_DONE: {
+              target: 'round_over',
+              actions: { type: "assignVotes" }
+            },
+          },
+          
         },
         round_over: {
           on: {

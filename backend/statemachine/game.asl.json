@@ -129,7 +129,10 @@
         }
       },
       "Items": "{% $uploads %}",
-      "Next": "SendResultsToPlayers"
+      "Next": "SendResultsToPlayers",
+      "Assign": {
+        "votes": "{% $states.result %}"
+      }
     },
     "SendResultsToPlayers": {
       "Type": "Map",
@@ -161,9 +164,6 @@
         }
       },
       "Items": "{% $players %}",
-      "Assign": {
-        "votes": "{% $states.input %}"
-      },
       "Next": "endGame?"
     },
     "endGame?": {
