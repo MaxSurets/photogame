@@ -3,59 +3,38 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 type Props = {
   label: string;
-  theme?: "primary";
+  size?: "sm" | "md" | "lg";
+  className?: string;
+  icon?: any;
   onPress?: () => void;
 };
 
-export default function Button({ label, theme, onPress }: Props) {
-  if (theme === "primary") {
-    return (
-      <View
-        style={[
-          styles.buttonContainer,
-          { borderWidth: 4, borderColor: "#ffd33d", borderRadius: 18 },
-        ]}
-      >
-        <Pressable
-          style={[styles.button, { backgroundColor: "#fff" }]}
-          onPress={onPress}
-        >
-          <Text style={[styles.buttonLabel, { color: "#25292e" }]}>
-            {label}
-          </Text>
-        </Pressable>
-      </View>
-    );
+export default function Button({ label, onPress, size, className, icon }: Props) {
+
+  let width = "w-full";
+
+  if (size === "sm") {
+    width = "w-28";
+  } else if (size === "md") {
+    width = "w-60";
+  } else if (size === "lg") {
+    width = "w-80";
   }
 
   return (
-    <View style={styles.buttonContainer}>
-      <Pressable style={styles.button} onPress={onPress}>
-        <Text style={styles.buttonLabel}>{label}</Text>
+    <View
+      className="m-3"
+    >
+      <Pressable
+        className={`${width} button ${className} flex-row space-x-3 justify-baseline`}
+        onPress={onPress}
+      >
+        <Text
+          className="text-white text-lg">
+          {label}
+        </Text>
+        {icon}
       </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  buttonContainer: {
-    width: 320,
-    height: 68,
-    marginHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 3,
-  },
-  button: {
-    borderRadius: 10,
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  buttonLabel: {
-    color: "#fff",
-    fontSize: 16,
-  },
-});
