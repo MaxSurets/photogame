@@ -1,4 +1,7 @@
 import { setup, fromPromise, assign } from 'xstate';
+import { checkFirstTimeVisit } from '@/services/storage';
+import { CommonActions } from '@react-navigation/native';
+
 
 function delayedReturn(value, delay): Promise<object> {
   return new Promise(resolve => {
@@ -21,7 +24,7 @@ const createUserMachine = (navigation) => {
         isHost: boolean | unknown;
         username: string;
         error: unknown;
-        roomNumber: number | undefined;
+        roomNumber: string;
         players: { name: string }[];
         maxRounds: number;
         prompt: string;
@@ -29,18 +32,29 @@ const createUserMachine = (navigation) => {
         votes_for_round: { [key: string]: string }
         scores: { [key: string]: number },
         conn: object;
+        isFirstVisit: boolean;
       }
     },
     actions: {
-      navigate: (_, params: { to: string }): any => {
+      navigate: (_, params: { to: string, id?: string | undefined }): any => {
+        const { to, ...rest } = params
         if (navigation.isReady()) {
           console.log("Navigating to", params.to)
-          navigation.navigate(params.to)
+          navigation.dispatch((state) => {
+            const routes = [{ name: params.to, params: rest}];
+
+            return CommonActions.reset({
+              ...state,
+              routes,
+              index: 0,
+            });
+          });
         }
         else {
           console.log("Navigation not ready")
         }
-      }
+      },
+
     },
     actors: {
       sendPlayers: fromPromise(async ({ input }: { input: { players, isHost, username } }) => {
@@ -49,6 +63,10 @@ const createUserMachine = (navigation) => {
 
         return conn;
       }),
+      checkFirstTimeVisit: fromPromise(async (): Promise<boolean> => {
+        const isFirstVisit = await checkFirstTimeVisit();
+        return isFirstVisit
+      })
     },
     guards: {
       check_name: ({ context }) => {
@@ -57,12 +75,11 @@ const createUserMachine = (navigation) => {
     }
   }).createMachine({
     id: 'user',
-    initial: 'start_screen',
     context: {
       isHost: undefined,
       username: '',
       error: undefined,
-      roomNumber: undefined,
+      roomNumber: '',
       players: [],
       maxRounds: 3,
       prompt: '',
@@ -70,11 +87,34 @@ const createUserMachine = (navigation) => {
       votes_for_round: {},
       scores: {},
       conn: {},
+      isFirstVisit: false,
     },
+    initial: 'start',
     states: {
-      start_screen: {
-        entry: [{ type: 'navigate', params: { to: 'index' } }],
+      start: {
+        // entry: [{ type: 'navigate', params: { to: 'index' } }],
+        invoke: {
+          id: 'checkFirstTimeVisit',
+          src: 'checkFirstTimeVisit',
+          onDone: {
+            actions: assign({
+              isFirstVisit: ({ event }) => event.output,
+            }),
+          },
+          onError: {
+            target: 'failure',
+            actions: assign({
+              error: ({ event }) => event.error,
+            }),
+          },
+        },
         on: {
+          SKIP_TUTORIAL: {
+            // target: 'start',
+            actions: assign({
+              isFirstVisit: false,
+            })
+          },
           CREATE_ROOM: {
             target: 'creating_room',
             actions: assign({
@@ -90,16 +130,41 @@ const createUserMachine = (navigation) => {
           },
         },
       },
+      tutorial: {
+        initial: 'one',
+        states: {
+          one: {
+            on: {
+              NEXT: 'two',
+            }
+          },
+          two: {
+            type: 'final',
+          },
+        },
+        onDone: {
+          target: 'start',
+        },
+        on: {
+          SKIP: {
+            target: 'start',
+            actions: assign({
+              isFirstVisit: false,
+            })
+          }
+        }
+      },
       creating_room: {
         on: {
-          CREATE: {
+          NEXT: {
             target: 'waiting',
             actions: assign({
               username: ({ event }) => event.username,
+              roomNumber: "1234",  // TODO: Generate room number
             }),
           },
           BACK: {
-            target: 'start_screen',
+            target: 'start',
             actions: assign({
               isHost: undefined,
             })
@@ -108,22 +173,26 @@ const createUserMachine = (navigation) => {
       },
       joining_room: {
         on: {
-          JOIN: {
+          NEXT: {
             target: 'waiting',
             actions: assign({
               username: ({ event }) => event.username,
             }),
           },
           BACK: {
-            target: 'start_screen',
-            actions: assign({
-              isHost: undefined,
-            })
+            target: 'start',
+            actions: [
+              { type: 'navigate', params: { to: 'index' } },
+              assign({ isHost: undefined, roomNumber: '' }),
+            ]
           },
         },
       },
       waiting: {
-        entry: [{ type: 'navigate', params: { to: 'waiting_room' } }],
+        entry: [{
+          type: 'navigate',
+          params: ({ context }) => ({ to: 'waiting_room/[id]', id: context.roomNumber })
+        }],
         on: {
           PLAYER_JOIN: {
             actions: assign({
@@ -223,9 +292,9 @@ const createUserMachine = (navigation) => {
         },
       },
       failure: {
-        on: {
-          RETRY: { target: 'loading' },
-        },
+        // on: {
+        //   RETRY: { target: 'asd' },
+        // },
       },
     }
   })

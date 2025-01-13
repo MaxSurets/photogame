@@ -1,144 +1,66 @@
-import { View, StyleSheet, Platform, TextInput, Text, Modal } from "react-native";
-import { useState } from "react";
-import * as Clipboard from 'expo-clipboard';
+import { View, TextInput, Text } from "react-native";
+import React, { useState } from "react";
 import { StateMachineContext } from '../services/StateMachineProvider'
 import Button from "@/components/Button";
+import Info from "@/components/Info";
+import TutorialModal from "@/components/TutorialModal";
+import StyledModal from "@/components/StyledModal";
+import UserModal from "@/components/UserModal";
 
 export default function Index() {
 
   const actor = StateMachineContext.useActorRef();
-  const isHost = StateMachineContext.useSelector((state) => state.context.isHost)
+  const isFirstVisit = StateMachineContext.useSelector((state) => state.context.isFirstVisit)
   const current = StateMachineContext.useSelector((snapshot) => snapshot.value)
 
   const [roomNumber, setRoomNumber] = useState<string>("");
   const [name, setName] = useState<string>("");
 
-  const copyToClipboard = async () => {
-    await Clipboard.setStringAsync(roomNumber);
-  };
-
-  const generateRoomNumber = () => {
-    let roomNumber = Math.floor(Math.random() * 1000000)
-    setRoomNumber(roomNumber.toString())
-  }
+  console.log("Current", current)
 
   const joinRoomUsingNumber = async () => {
     // TODO: Check room number
+    if (roomNumber === "") {
+      alert("Please enter a room number")
+      return
+    }
     actor.send({ type: 'JOIN_ROOM', roomNumber: roomNumber })
   }
 
-
   return (
-    <View style={styles.container}>
-      <View style={{ flexDirection: "column", alignItems: 'center', height: "100%", width: "100%", justifyContent: "center" }}>
+    <>
+      <UserModal />
+      <TutorialModal show={isFirstVisit} />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: "center", backgroundColor: "#ffffff0d", height: "50%", width: "100%" }}>
-          {/* <TextInput
-            editable={false}
-            value={roomNumber} /> */}
-          {/* <Button
-            label='Copy 🔗'
-            onPress={copyToClipboard}
-          /> */}
-          <Button
-            theme="primary"
-            label="Create Room 🪄"
-            onPress={() => actor.send({ type: 'CREATE_ROOM' })}
-          />
+      <View className="flex-1 flex-col bg-[#25292e]">
+        <View className="flex-col items-center justify-center h-full w-full">
+          <View className="flex-row items-center justify-center bg-neutral-900 h-1/2 w-full">
+            <Button
+              label="Create Room 🪄"
+              size="md"
+              className="bg-neutral-800"
+              onPress={() => actor.send({ type: 'CREATE_ROOM' })}
+            />
+          </View>
+
+          <View className="flex-column items-center justify-center bg-neutral-800 h-1/2 w-full">
+            <TextInput
+              placeholder='Enter Room ID'
+              onChangeText={setRoomNumber}
+              className="input w-60"
+            />
+            <Button
+              label="Join Room 🚀"
+              size="md"
+              className="bg-neutral-900"
+              onPress={joinRoomUsingNumber}
+            />
+          </View>
+
+
         </View>
-
-        {current === 'creating_room' && (
-          <Modal>
-            <View>
-              <Text>Enter your name</Text>
-              <TextInput
-                onChangeText={setName}
-                value={name}
-                placeholder="ex: jiwonie11"
-              />
-              <Button
-                theme="primary"
-                label="Next"
-                onPress={() => actor.send({ type: 'CREATE', username: name })}
-              // TODO: Disable when username invalid
-              />
-              <Button
-                theme="primary"
-                label="Cancel"
-                onPress={() => actor.send({ type: 'BACK' })}
-              />
-            </View>
-          </Modal>
-        )}
-
-
-        <Text style={{}}>--OR--</Text>
-
-        <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: "center", backgroundColor: "#fff", height: "50%", width: "100%" }}>
-          <TextInput
-            placeholder='Enter Room ID'
-            style={{
-              textAlign: "center",
-              padding: 10,
-              borderColor: "gray"
-            }}
-          />
-          <Button
-            theme="primary"
-            label="Join Room 🚀"
-            onPress={joinRoomUsingNumber}
-          />
-        </View>
-
-        {current === 'joining_room' && (
-          <Modal>
-            <View>
-              <Text>Enter your name</Text>
-              <TextInput
-                onChangeText={setName}
-                value={name}
-                placeholder="ex: jiwonie11"
-              />
-              <Button
-                theme="primary"
-                label="Next"
-                onPress={() => actor.send({ type: 'JOIN', username: name })}
-              // TODO: Disable when username invalid
-              />
-              <Button
-                theme="primary"
-                label="Cancel"
-                onPress={() => actor.send({ type: 'BACK' })}
-              />
-            </View>
-          </Modal>
-        )}
 
       </View>
-
-    </View>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#25292e",
-    alignItems: "center",
-  },
-  imageContainer: {
-    flex: 1,
-  },
-  footerContainer: {
-    flex: 1 / 3,
-    alignItems: "center",
-  },
-  optionsContainer: {
-    position: "absolute",
-    bottom: 80,
-  },
-  optionsRow: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
-});
