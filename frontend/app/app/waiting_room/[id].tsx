@@ -79,15 +79,6 @@ export default function App() {
             }} />
         </View>
 
-        {/* Simulate player joining */}
-        <Button
-          label="Join"
-          onPress={() => {
-            let player = { username: `Player_${Math.floor(Math.random() * 10)}` }
-            actor.send({ type: 'PLAYER_JOIN', player: player })
-          }}
-        />
-
 
         {(current === 'waiting' && isHost === true) && <View>
           <Text className="text-white text-center mb-2">{players.length} players joined</Text>
