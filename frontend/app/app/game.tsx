@@ -1,7 +1,6 @@
-import { View, StyleSheet, Platform, TextInput, Text, Modal } from "react-native";
-import { useState } from "react";
-import * as Clipboard from 'expo-clipboard';
-import { StateMachineContext } from '../services/StateMachineProvider'
+import { View, Text } from "react-native";
+import { useSelector } from '@xstate/react';
+import { actor } from '@/services/StateMachineProvider'
 import Button from "@/components/Button";
 import React from "react";
 
@@ -18,11 +17,9 @@ const renderSnapshotValue = (value) => {
 
 export default function Game() {
 
-    const actor = StateMachineContext.useActorRef();
-
-    const prompt = StateMachineContext.useSelector((state) => state.context.prompt)
-    const round = StateMachineContext.useSelector((state) => state.context.round)
-    const current = renderSnapshotValue(StateMachineContext.useSelector((snapshot) => snapshot.value))
+    const prompt = useSelector(actor, (state) => state.context.prompt)
+    const round = useSelector(actor,(state) => state.context.round)
+    const current = renderSnapshotValue(useSelector(actor,(snapshot) => snapshot.value))
 
     console.log("Current", current)
 

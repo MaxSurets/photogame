@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, TextInput, View } from 'react-native';
-import { StateMachineContext } from '@/services/StateMachineProvider'
+import { actor } from '@/services/StateMachineProvider'
+import { useSelector } from '@xstate/react';
 import Button from "@/components/Button";
 import { useLocalSearchParams } from 'expo-router';
 import UserModal from "@/components/UserModal";
@@ -11,11 +12,10 @@ import * as Sharing from 'expo-sharing';
 
 
 export default function App() {
-  const actor = StateMachineContext.useActorRef();
-  const current = StateMachineContext.useSelector((snapshot) => snapshot.value)
-  const players = StateMachineContext.useSelector((snapshot) => snapshot.context.players)
-  const isHost = StateMachineContext.useSelector((snapshot) => snapshot.context.isHost)
-  const roomNumber = StateMachineContext.useSelector((snapshot) => snapshot.context.roomNumber)
+  const current = useSelector(actor, (snapshot) => snapshot.value)
+  const players =useSelector(actor, (snapshot) => snapshot.context.players)
+  const isHost = useSelector(actor, (snapshot) => snapshot.context.isHost)
+  const roomNumber = useSelector(actor, (snapshot) => snapshot.context.roomNumber)
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const renderPlayers = (players) => {

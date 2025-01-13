@@ -1,11 +1,10 @@
 import { View, Text } from "react-native";
 import Button from "@/components/Button";
-import { StateMachineContext } from '@/services/StateMachineProvider'
+import { actor } from '@/services/StateMachineProvider'
 import { setFirstTimeVisit } from "@/services/storage";
 import StyledModal from "./StyledModal";
 
 export default function TutorialModal({ show }) {
-    const actor = StateMachineContext.useActorRef();
 
     const closeModal = async () => {
         await setFirstTimeVisit();
@@ -26,7 +25,6 @@ export default function TutorialModal({ show }) {
                 </View>
             </View>
             <Button
-                theme="primary"
                 label="Close"
                 onPress={closeModal}
             />

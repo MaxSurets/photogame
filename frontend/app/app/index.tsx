@@ -1,6 +1,7 @@
 import { View, TextInput, Text } from "react-native";
 import React, { useState } from "react";
-import { StateMachineContext } from '../services/StateMachineProvider'
+import { actor } from '../services/StateMachineProvider'
+import { useSelector } from '@xstate/react';
 import Button from "@/components/Button";
 import Info from "@/components/Info";
 import TutorialModal from "@/components/TutorialModal";
@@ -9,9 +10,8 @@ import UserModal from "@/components/UserModal";
 
 export default function Index() {
 
-  const actor = StateMachineContext.useActorRef();
-  const isFirstVisit = StateMachineContext.useSelector((state) => state.context.isFirstVisit)
-  const current = StateMachineContext.useSelector((snapshot) => snapshot.value)
+  const isFirstVisit = useSelector(actor, (state) => state.context.isFirstVisit)
+  const current = useSelector(actor, (snapshot) => snapshot.value)
 
   const [roomNumber, setRoomNumber] = useState<string>("");
   const [name, setName] = useState<string>("");

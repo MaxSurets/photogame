@@ -1,13 +1,13 @@
 import { View, TextInput, Text } from "react-native";
 import React, { useState } from "react";
-import { StateMachineContext } from '../services/StateMachineProvider'
+import { actor } from '@/services/StateMachineProvider'
+import { useSelector } from '@xstate/react';
 import Button from "@/components/Button";
 import StyledModal from "@/components/StyledModal";
 
 export default function UserModal() {
 
-    const actor = StateMachineContext.useActorRef();
-    const current = StateMachineContext.useSelector((snapshot) => snapshot.value)
+    const current = useSelector(actor, (snapshot) => snapshot.value)
 
     const [name, setName] = useState<string>("");
 
