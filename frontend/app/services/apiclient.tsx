@@ -32,10 +32,13 @@ function establish_connection(players, isHost, username, roomNumber = null): Pro
                 prompt: message.prompt,
                 round: message.round,
                 uploadUrl: message.uploadUrl,
-                callbackToken: message.callbackToken
+                callbackToken: message.callbackToken,
+                players: message.players
               })
             } else if (message.action === 'vote') {
               actor.send({ type: 'UPLOADS_DONE', callbackToken: message.callbackToken })
+            } else if (message.action === 'showResults') {
+              actor.send({ type: 'VOTES_DONE', votes: message.results })
             }
             if (message.callbackToken) {
               callbackToken = message.callbackToken;
@@ -63,16 +66,21 @@ function establish_connection(players, isHost, username, roomNumber = null): Pro
               callbackToken = message.callbackToken;
             }
             if (message.action === 'startRound') {
-              actor.send({ type: 'PLAYER_START', conn: connection })
+              if (message.round === 1) {
+                actor.send({ type: 'PLAYER_START', conn: connection })
+              }
               actor.send({
                 type: 'GET_PROMPT',
                 prompt: message.prompt,
                 round: message.round,
                 uploadUrl: message.uploadUrl,
-                callbackToken: message.callbackToken
+                callbackToken: message.callbackToken,
+                players: message.players
               })
             } else if (message.action === 'vote') {
               actor.send({ type: 'UPLOADS_DONE', callbackToken: message.callbackToken })
+            } else if (message.action === 'showResults') {
+              actor.send({ type: 'VOTES_DONE', votes: message.results })
             }
           } catch (err) {
             console.log('Error parsing message:', err);
@@ -128,16 +136,19 @@ const stateMachine = setup({
     },
     assignVotes: assign(({ context, event }) => {
       console.log("Assigning votes", context, event)
-      const players = Object.values(context.players).map(player => player.id)
+      const players = context.players.map(player => player.id)
+      console.log("Players", players)
       const votes_for_round = event.votes
       const scores = context.scores
-      let final_scores = {}
+      let final_scores = Object.assign({}, scores);
 
-      for (const player of players) {
-        const votes_for_player = votes_for_round[player] ?? []
-        const player_score = scores[player] ?? 0
-        final_scores[player] = player_score + votes_for_player.length
+      for (const entry of votes_for_round) {
+        if (!players.includes(entry.vote)) {
+          console.warn(entry.vote, "not in players")
+        }
+        final_scores[entry.vote] += 1;
       }
+      console.log("Final scores", final_scores)
 
       return {
         votes_for_round: votes_for_round,
@@ -176,7 +187,7 @@ const stateMachine = setup({
       console.log("Result of finishing upload", result)
     }),
     vote: fromPromise(async ({ input }: { input: { conn, callbackToken, username, vote } }) => {
-      const body = { action: 'vote', taskToken: input.callbackToken, voter: input.username, vote: input.vote}
+      const body = { action: 'vote', taskToken: input.callbackToken, voter: input.username, vote: input.vote }
       console.log("Sending vote message", body)
       const string_body = JSON.stringify(body)
       const result = await input.conn.send(string_body)
@@ -371,14 +382,14 @@ const stateMachine = setup({
       },
     },
     game: {
-      entry: [{ type: 'navigate', params: { to: 'game' } }],
+      entry: { type: 'navigate', params: { to: 'game' } },
       initial: 'waiting_for_prompt',
       states: {
-        display_scores: {
-          after: {
-            5000: 'waiting_for_prompt'
-          }
-        },
+        // display_scores: {
+        //   after: {
+        //     5000: 'waiting_for_prompt'
+        //   }
+        // },
         waiting_for_prompt: {
           on: {
             GET_PROMPT: {
@@ -386,8 +397,18 @@ const stateMachine = setup({
               actions: assign({
                 prompt: ({ event }) => event.prompt,
                 uploadUrl: ({ event }) => event.uploadUrl,
-                round: ({ context }) => context.round + 1,
+                round: ({ event }) => event.round,
                 callbackToken: ({ event }) => event.callbackToken,
+                players: ({ event }) => event.players,
+                scores: ({ context, event }) => {  // Initialize scores
+                  if (Object.keys(context.scores).length > 0) {
+                    return context.scores
+                  }
+                  const players = event.players.map(player => player.id)
+                  let scores = {}
+                  players.forEach(player => scores[player] = 0)
+                  return scores
+                }
               }),
             },
           },
@@ -440,28 +461,42 @@ const stateMachine = setup({
           on: {
             VOTES_DONE: {
               target: 'round_over',
-              actions: { type: "assignVotes" }
+              actions: { type: 'assignVotes' }
             },
           },
-          
+
         },
         round_over: {
-          on: {
-            NEXT_ROUND: [
-              {
-                target: 'display_scores',
-                guard: ({ context }) => {
-                  return context.round < context.maxRounds
-                }
-              },
-              {
-                target: 'game_over',
-                guard: ({ context }) => {
-                  return context.round >= context.maxRounds
-                }
+          after: {
+            5000: {
+              target: 'waiting_for_prompt',
+              guard: ({ context }) => {
+                return context.round < context.maxRounds
               }
-            ]
+            },
+            6000: {
+              target: 'game_over',
+              guard: ({ context }) => {
+                return context.round >= context.maxRounds
+              }
+            },
           },
+          // on: {
+          //   NEXT_ROUND: [
+          //     {
+          //       target: 'waiting_for_prompt',
+          //       guard: ({ context }) => {
+          //         return context.round < context.maxRounds
+          //       }
+          //     },
+          //     {
+          //       target: 'game_over',
+          //       guard: ({ context }) => {
+          //         return context.round >= context.maxRounds
+          //       }
+          //     }
+          //   ]
+          // },
         },
         game_over: {}
       },

@@ -2,7 +2,7 @@
 
 [sync_state]
 dependency_layer = false
-latest_infra_sync_time = "2025-01-13T03:56:38.610710"
+latest_infra_sync_time = "2025-01-13T23:46:14.618081"
 
 [resource_sync_states."ZipFunctionSyncFlow:OnConnectFunction"]
 hash = "12552627e432566e7c5a73676c60635e58274fb1f1e77c4c01ffcffebd83216a"
