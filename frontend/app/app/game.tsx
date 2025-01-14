@@ -1,24 +1,38 @@
 import { View, Text } from "react-native";
 import { useSelector } from '@xstate/react';
-import { actor } from '@/services/apiclient'
+import { actor } from '@/services/apiclient';
 import Button from "@/components/Button";
 import React from "react";
 import GameProgressBar from "@/components/GameProgressBar";
 import { renderSnapshotValue } from "@/services/utils"
 import GameImageUpload from "@/components/GameImageUpload";
+import GameImageOption from "@/components/GameImageOption";
 
 
 export default function Game() {
 
     const prompt = useSelector(actor, (state) => state.context.prompt)
     // const round = useSelector(actor, (state) => state.context.round)
-    const uploadUrl = useSelector(actor, (state) => state.context.uploadUrl)
-    let current = renderSnapshotValue(useSelector(actor, (snapshot) => snapshot.value))
+    const round = useSelector(actor, (state) => state.context.round)
+    const players = useSelector(actor, (state) => state.context.players)
+    const roomNumber = useSelector(actor, (state) => state.context.roomNumber)
+    const current = renderSnapshotValue(useSelector(actor, (snapshot) => snapshot.value))
 
     console.log("Current", current)
 
 
-    current = "game.waiting_for_uploads"
+    const renderImages = () => {
+        return players.map((player, i) => {
+            return (
+                <GameImageOption
+                    playerId={player.id}
+                    roomNumber={roomNumber}
+                    roundNumber={round}
+                    key={i}
+                />
+            )
+        })
+    }
 
     const renderStep = () => {
         switch (current) {
@@ -40,31 +54,36 @@ export default function Game() {
                 )
             case "game.uploading":
                 return (
-                    <View className="items-center justify-center p-6 space-y-10">
-                        <Text className="text-white">Prompt: {prompt}</Text>
-                        <Text className="text-white">Upload URL: {uploadUrl}</Text>
-                        <Text className="text-white">Waiting for uploads</Text>
+                    <View className="flex-col items-center justify-center h-4/5 space-y-16">
+                        <Text className="text-white text-2xl">Waiting for other users</Text>
+                        <View className='bouncing-dots' />
                     </View>
                 )
             case "game.waiting_for_votes":
                 return (
                     <View className="items-center justify-center p-6 space-y-10">
-                        <Text className="text-white">Prompt: {prompt}</Text>
-                        <Text className="text-white">Vote here</Text>
-                        <Button label='Vote for p2' onPress={() => actor.send({ type: 'VOTE', vote: "p2" })} />
+
+                        {renderImages()}
+
+                        <Button
+                            size="lg"
+                            label='Skip vote'
+                            onPress={() => actor.send({ type: 'VOTE', vote: null })}
+                        />
                     </View>
                 )
             case "game.voting":
                 return (
-                    <View className="items-center justify-center p-6 space-y-10">
-                        <Text className="text-white">Prompt: {prompt}</Text>
-                        <Text className="text-white">Waiting for votes</Text>
+                    <View className="items-center justify-center h-4/5 space-y-10">
+                        <Text className="text-white text-2xl">Waiting for other users</Text>
+                        <View className='bouncing-dots' />
                     </View>
                 )
             case "game.round_over":
                 return (
                     <View className="items-center justify-center p-6 space-y-10">
                         <Text className="text-white">Round over</Text>
+                        <Text className="text-white">Scores (show scores)</Text>
                     </View>
                 )
             case "game.game_over":

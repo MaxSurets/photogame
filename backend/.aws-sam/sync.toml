@@ -17,8 +17,8 @@ hash = "378bf81df3aa631bd31c29671331b08e850aa1c31d8d2547e164268f3920b0da"
 sync_time = "2024-12-01T21:11:27.531366"
 
 [resource_sync_states."ZipFunctionSyncFlow:GenerateRoundInfoFunction"]
-hash = "01960941b3da5ea0ef782ccbaac632f726ef836c330c26b85def52b3469d5e84"
-sync_time = "2024-12-02T04:25:57.378239"
+hash = "310ecc75ad36fe97141d75bd75b0e2fe479ee5ed6fd23c95d1da13edb0d2a069"
+sync_time = "2025-01-14T03:11:08.720388"
 
 [resource_sync_states."ZipFunctionSyncFlow:ExecuteCallbackFunction"]
 hash = "7b864f3cefa8eaee7759028b5b167f3d73f0053f33bad105008ef3f0d1a69686"

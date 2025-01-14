@@ -128,7 +128,7 @@ export default function Index() {
                             onPress={async () => {
                                 console.log("Uploading photo to", uploadUrl)
                                 // TODO: Upload photo to presigned url
-                                await onSaveImageAsync()
+                                // await onSaveImageAsync()
                                 actor.send({ type: 'UPLOAD' })
                             }}
                         />
