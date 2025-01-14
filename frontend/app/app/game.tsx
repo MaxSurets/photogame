@@ -91,7 +91,7 @@ export default function Game() {
                             const response = await fetch(uploadUrl, {
                                 method: 'PUT',
                                 headers: {
-                                    'Content-Type': imageToUpload.type
+                                    'Content-Type': 'image/jpeg',
                                 },
                                 body: imageToUpload, 
                             });
