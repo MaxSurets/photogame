@@ -5,8 +5,8 @@ dependency_layer = false
 latest_infra_sync_time = "2025-01-13T23:46:14.618081"
 
 [resource_sync_states."ZipFunctionSyncFlow:OnConnectFunction"]
-hash = "12552627e432566e7c5a73676c60635e58274fb1f1e77c4c01ffcffebd83216a"
-sync_time = "2025-01-13T03:56:17.899578"
+hash = "af22ae0d0bd4a89f24de2cf7e2d62a9016979d4d92c213298666d02127bf1bbd"
+sync_time = "2025-01-14T22:19:55.145996"
 
 [resource_sync_states."ZipFunctionSyncFlow:SendMessageFunction"]
 hash = "0989ad8e18c1b1be68f17e8aa0e975f60d6f96f504f3be1fe09f38017257bb77"
