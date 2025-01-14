@@ -76,6 +76,7 @@ export default function Index() {
 
     const handleImageUpload = async () => {
         let imageToUpload;
+        setUploading(true)
         try {
             if (Platform.OS !== "web") {
                 imageToUpload = await captureRef(imageRef, {
@@ -97,9 +98,10 @@ export default function Index() {
 
         if (!imageToUpload || !uploadUrl) {
             console.error("Image or upload URL not available");
+            setUploading(false)
+            alert("Failed to upload photo");
             return;
         }
-        setUploading(true)
         try {
             if (imageToUpload) {
                 const response = await fetch(imageToUpload);
