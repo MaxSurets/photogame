@@ -1,4 +1,4 @@
-import { View, Platform } from "react-native";
+import { View, Platform, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useState, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -20,8 +20,6 @@ import { useSelector } from '@xstate/react';
 import { actor } from '@/services/apiclient';
 import React from "react";
 
-const PlaceholderImage = require("@/assets/images/background-image.png");
-
 export default function Index() {
     const [selectedImage, setSelectedImage] = useState<string | undefined>(
         undefined
@@ -32,6 +30,7 @@ export default function Index() {
         undefined
     );
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+    const [uploading, setUploading] = useState(false)
     const [status, requestPermission] = MediaLibrary.usePermissions();
     const imageRef = useRef<View>(null);
 
@@ -100,7 +99,7 @@ export default function Index() {
             console.error("Image or upload URL not available");
             return;
         }
-
+        setUploading(true)
         try {
             if (imageToUpload) {
                 const response = await fetch(imageToUpload);
@@ -123,6 +122,8 @@ export default function Index() {
         } catch (error) {
             console.error("Error uploading photo:", error);
         }
+
+        setUploading(false)
     };
 
     const onSaveImageAsync = async () => {
@@ -160,6 +161,11 @@ export default function Index() {
         <GestureHandlerRootView className="flex-1 items-center">
             <View className="flex-1">
                 <View ref={imageRef} collapsable={false} className="rounded-xl w-[320px] h-[440px] md:w-[480px] lg:h-[660px]" onLayout={saveDimensions}>
+                    {uploading && <ActivityIndicator
+                        className="absolute top-1/2 left-1/2 z-10"
+                        size="large"
+                        color="#fff"
+                    />}
                     {selectedImage && <ImageViewer
                         selectedImage={selectedImage}
                     />}
