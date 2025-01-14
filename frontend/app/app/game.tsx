@@ -98,14 +98,11 @@ export default function Game() {
 
                             if (response.ok) {
                                 console.log("Photo uploaded successfully");
-                                actor.send({ type: 'UPLOAD_SUCCESS' });
                             } else {
                                 console.error("Failed to upload photo", response.statusText);
-                                actor.send({ type: 'UPLOAD_FAILURE' });
                             }
                         } catch (error) {
                             console.error("Error uploading photo:", error);
-                            actor.send({ type: 'UPLOAD_FAILURE' });
                         }
                     }}
                 />
