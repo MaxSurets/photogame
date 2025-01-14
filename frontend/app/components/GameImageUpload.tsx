@@ -31,6 +31,7 @@ export default function Index() {
     const [pickedEmoji, setPickedEmoji] = useState<ImageSource | undefined>(
         undefined
     );
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
     const [status, requestPermission] = MediaLibrary.usePermissions();
     const imageRef = useRef<View>(null);
 
@@ -57,6 +58,11 @@ export default function Index() {
         }
     };
 
+    const saveDimensions = event => {
+        let { width, height } = event.nativeEvent.layout
+        setDimensions({ width, height })
+    }
+
     const onReset = () => {
         setShowAppOptions(false);
     };
@@ -74,12 +80,15 @@ export default function Index() {
         try {
             if (Platform.OS !== "web") {
                 imageToUpload = await captureRef(imageRef, {
-                    height: 440,
+                    height: dimensions.height,
+                    width: dimensions.width,
                     quality: 1,
                 });
 
             } else {
                 imageToUpload = await domtoimage.toJpeg(imageRef.current, {
+                    height: dimensions.height,
+                    width: dimensions.width,
                     quality: 0.95,
                 });
             }
@@ -93,7 +102,6 @@ export default function Index() {
         }
 
         try {
-            console.log("Preparing to upload photo:", imageToUpload);
             if (imageToUpload) {
                 const response = await fetch(imageToUpload);
                 const fileData = await response.blob();
@@ -151,9 +159,8 @@ export default function Index() {
     return (
         <GestureHandlerRootView className="flex-1 items-center">
             <View className="flex-1">
-                <View ref={imageRef} collapsable={false}>
+                <View ref={imageRef} collapsable={false} className="rounded-xl w-[320px] h-[440px] md:w-[480px] lg:h-[660px]" onLayout={saveDimensions}>
                     {selectedImage && <ImageViewer
-                        imgSource={PlaceholderImage}
                         selectedImage={selectedImage}
                     />}
                     {pickedEmoji && (
