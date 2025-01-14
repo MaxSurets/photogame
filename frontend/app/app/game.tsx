@@ -4,6 +4,7 @@ import { actor } from '@/services/apiclient'
 import Button from "@/components/Button";
 import React from "react";
 import ImagePickerComponent from "@/components/ImagePicker";
+import { Asset } from 'react-native-image-picker';
 
 
 const renderSnapshotValue = (value) => {
@@ -22,10 +23,40 @@ export default function Game() {
     const round = useSelector(actor, (state) => state.context.round)
     const uploadUrl = useSelector(actor, (state) => state.context.uploadUrl)
     const current = renderSnapshotValue(useSelector(actor, (snapshot) => snapshot.value))
-    const [imageToUpload, setImageToUpload] = React.useState<File | null>(null);
+    const [imageToUpload, setImageToUpload] = React.useState<Asset | null>(null);
 
     console.log("Current", current)
 
+    const handleImageUpload = async () => {
+        if (!imageToUpload || !uploadUrl) {
+            console.error("Image or upload URL not available");
+            return;
+        }
+
+        try {
+            console.log("Preparing to upload photo:", imageToUpload);
+            if (imageToUpload.uri) {
+                const response = await fetch(imageToUpload.uri);
+                const fileData = await response.blob();
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': imageToUpload.type || 'image/jpeg',
+                    },
+                    body: fileData,
+                });
+                if (uploadResponse.ok) {
+                    console.log("Photo uploaded successfully");
+                } else {
+                    console.error("Failed to upload photo", uploadResponse.status, uploadResponse.statusText);
+                }
+            } else {
+                console.error("Image URI is missing");
+            }
+        } catch (error) {
+            console.error("Error uploading photo:", error);
+        }
+    };
 
     const renderStep = () => {
         switch (current) {
@@ -79,33 +110,9 @@ export default function Game() {
                 <Text>Upload:</Text>
                 <Button
                     label="Upload"
-                    onPress={async () => {
-                        if (!imageToUpload || !uploadUrl) {
-                            console.error("Image or upload URL not available");
-                            return;
-                        }
-
-                        try {
-                            console.log("Uploading photo to", uploadUrl);
-
-                            const response = await fetch(uploadUrl, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'image/jpeg',
-                                },
-                                body: imageToUpload, 
-                            });
-
-                            if (response.ok) {
-                                console.log("Photo uploaded successfully");
-                            } else {
-                                console.error("Failed to upload photo", response.statusText);
-                            }
-                        } catch (error) {
-                            console.error("Error uploading photo:", error);
-                        }
-                    }}
+                    onPress={handleImageUpload}
                 />
+
             </View>
 
 
