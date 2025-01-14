@@ -16,6 +16,7 @@ export default function Game() {
     const round = useSelector(actor, (state) => state.context.round)
     const players = useSelector(actor, (state) => state.context.players)
     const roomNumber = useSelector(actor, (state) => state.context.roomNumber)
+    const scores = useSelector(actor, (state) => state.context.scores)
     const current = renderSnapshotValue(useSelector(actor, (snapshot) => snapshot.value))
 
     console.log("Current", current)
@@ -32,6 +33,20 @@ export default function Game() {
                 />
             )
         })
+    }
+
+    const getWinner = () => {
+        const filtered_scores = Object.values(scores).filter(score => !Number.isNaN(score))
+        const max = Math.max(...filtered_scores)
+        console.log(max)
+        const winners = Object.keys(scores).filter(key => scores[key] === max)
+        console.log(winners)
+        return (
+            <View>
+                <Text className="text-center text-3xl font-medium">{`Congrats to our winner${winners.length > 1 ? "s" : ""}!`}</Text>
+                {winners.map((winner, i) => <Text key={i} className="text-6xl text-center font-extrabold">{winner}</Text>)}
+            </View>
+        )
     }
 
     const renderStep = () => {
@@ -89,8 +104,8 @@ export default function Game() {
             case "game.game_over":
                 return (
                     <View className="items-center justify-center p-6 space-y-10">
-                        <Text className="text-white">Game over</Text>
-                        <Text className="text-white">Winner: (put winner here)</Text>
+                        <Text className="text-white text-3xl font-light">Game over</Text>
+                        <Text className="text-white">{getWinner()}</Text>
                     </View>
                 )
             default:
