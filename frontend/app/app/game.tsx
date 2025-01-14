@@ -3,6 +3,7 @@ import { useSelector } from '@xstate/react';
 import { actor } from '@/services/apiclient'
 import Button from "@/components/Button";
 import React from "react";
+import ImagePickerComponent from "@/components/ImagePicker";
 
 
 const renderSnapshotValue = (value) => {
@@ -21,6 +22,7 @@ export default function Game() {
     const round = useSelector(actor, (state) => state.context.round)
     const uploadUrl = useSelector(actor, (state) => state.context.uploadUrl)
     const current = renderSnapshotValue(useSelector(actor, (snapshot) => snapshot.value))
+    const [imageToUpload, setImageToUpload] = React.useState<File | null>(null);
 
     console.log("Current", current)
 
@@ -39,7 +41,9 @@ export default function Game() {
                     <View className="items-center justify-center p-6 space-y-10">
                         <Text className="text-white">Prompt: {prompt}</Text>
                         <Text className="text-white">Upload URL: {uploadUrl}</Text>
-                        <Text className="text-white">Placeholder for image picker component</Text>
+                        <ImagePickerComponent 
+                            onImageSelected={(image) => setImageToUpload(image)} 
+                        />
                     </View>
                 )
             case "game.waiting_for_votes":
@@ -73,12 +77,38 @@ export default function Game() {
             </View>
             <View>
                 <Text>Upload:</Text>
-                <Button label='Upload' onPress={() => {
-                    console.log("Uploading photo to", uploadUrl)
-                    // TODO: Upload photo to presigned url
-                    
-                    actor.send({ type: 'UPLOAD' })
-                }} />
+                <Button
+                    label="Upload"
+                    onPress={async () => {
+                        if (!imageToUpload || !uploadUrl) {
+                            console.error("Image or upload URL not available");
+                            return;
+                        }
+
+                        try {
+                            console.log("Uploading photo to", uploadUrl);
+
+                            const response = await fetch(uploadUrl, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': imageToUpload.type
+                                },
+                                body: imageToUpload, 
+                            });
+
+                            if (response.ok) {
+                                console.log("Photo uploaded successfully");
+                                actor.send({ type: 'UPLOAD_SUCCESS' });
+                            } else {
+                                console.error("Failed to upload photo", response.statusText);
+                                actor.send({ type: 'UPLOAD_FAILURE' });
+                            }
+                        } catch (error) {
+                            console.error("Error uploading photo:", error);
+                            actor.send({ type: 'UPLOAD_FAILURE' });
+                        }
+                    }}
+                />
             </View>
 
 

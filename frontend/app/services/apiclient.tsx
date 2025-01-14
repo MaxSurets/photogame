@@ -126,6 +126,7 @@ const stateMachine = setup({
       isFirstVisit: boolean;
       uploadUrl: string;
       callbackToken: string;
+      //imageFile: any;
     }
   },
   actions: {
