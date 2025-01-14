@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { actor } from '@/services/apiclient'
 import { useSelector } from '@xstate/react';
@@ -17,6 +17,8 @@ export default function App() {
   const isHost = useSelector(actor, (snapshot) => snapshot.context.isHost)
   const roomNumber = useSelector(actor, (snapshot) => snapshot.context.roomNumber)
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  const [shared, setShared] = useState(false)
 
   const renderPlayers = (players) => {
     console.log("p", players)
@@ -63,7 +65,8 @@ export default function App() {
             className="input w-20 text-lg"
           />
           <Button
-            label="Share"
+            label={shared ? "Copied" : "Share"}
+            disabled={shared}
             size="sm"
             className="bg-neutral-800"
             icon={<FontAwesome name="share" size={16} color="white" />}
@@ -72,9 +75,10 @@ export default function App() {
                 console.log("Sharing is available")
                 await Sharing.shareAsync(roomNumber)
               } else {
-                await Clipboard.setStringAsync(roomNumber)
+                const currentUrl = window.location.href;
+                await Clipboard.setStringAsync(currentUrl)
+                setShared(true)
               }
-              console.log("Sharing link")
 
             }} />
         </View>
@@ -88,7 +92,7 @@ export default function App() {
           <Button
             label="Start Game"
             size="lg"
-            className="bg-neutral-900"
+            className="bg-neutral-900 self-center"
             onPress={() => actor.send({ type: 'HOST_START' })}
           />
         </View>}

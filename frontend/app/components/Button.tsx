@@ -2,6 +2,7 @@ import { StyleSheet, View, Pressable, Text } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 type Props = {
+  disabled?: boolean;
   label: string;
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -9,7 +10,7 @@ type Props = {
   onPress?: () => void;
 };
 
-export default function Button({ label, onPress, size, className, icon }: Props) {
+export default function Button({ label, onPress, size, className, icon, disabled=false }: Props) {
 
   let width = "w-full";
 
@@ -28,6 +29,7 @@ export default function Button({ label, onPress, size, className, icon }: Props)
       <Pressable
         className={`${width} button ${className} flex-row space-x-3 justify-baseline`}
         onPress={onPress}
+        disabled={disabled}
       >
         <Text
           className="text-white text-lg">
