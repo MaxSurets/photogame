@@ -69,6 +69,54 @@ export default function Index() {
         setIsModalVisible(false);
     };
 
+    const handleImageUpload = async () => {
+        let imageToUpload;
+        try {
+            if (Platform.OS !== "web") {
+                imageToUpload = await captureRef(imageRef, {
+                    height: 440,
+                    quality: 1,
+                });
+
+            } else {
+                imageToUpload = await domtoimage.toJpeg(imageRef.current, {
+                    quality: 0.95,
+                });
+            }
+        } catch (e) {
+            console.error("Failed to get image", e);
+        }
+
+        if (!imageToUpload || !uploadUrl) {
+            console.error("Image or upload URL not available");
+            return;
+        }
+
+        try {
+            console.log("Preparing to upload photo:", imageToUpload);
+            if (imageToUpload) {
+                const response = await fetch(imageToUpload);
+                const fileData = await response.blob();
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': imageToUpload.type || 'image/jpeg',
+                    },
+                    body: fileData,
+                });
+                if (uploadResponse.ok) {
+                    console.log("Photo uploaded successfully");
+                } else {
+                    console.error("Failed to upload photo", uploadResponse.status, uploadResponse.statusText);
+                }
+            } else {
+                console.error("Image URI is missing");
+            }
+        } catch (error) {
+            console.error("Error uploading photo:", error);
+        }
+    };
+
     const onSaveImageAsync = async () => {
         if (Platform.OS !== "web") {
             try {
@@ -127,8 +175,7 @@ export default function Index() {
                             label="Upload"
                             onPress={async () => {
                                 console.log("Uploading photo to", uploadUrl)
-                                // TODO: Upload photo to presigned url
-                                // await onSaveImageAsync()
+                                await handleImageUpload()
                                 actor.send({ type: 'UPLOAD' })
                             }}
                         />

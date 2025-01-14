@@ -14,17 +14,14 @@ export default function GameImageOption({ roomNumber, roundNumber, playerId }) {
         actor.send({ type: 'VOTE', vote: playerId })
         setShowModal(false)
     }
+    const source = `https://game-photo-bucket.s3.us-east-2.amazonaws.com/${roomNumber}/${roundNumber}/${playerId}.jpg`
 
     const image = (<Image
-        source={{ uri: `https://game-photo-bucket.s3.us-east-2.amazonaws.com/${roomNumber}/${roundNumber}/${playerId}.jpg` }}
+        source={{ uri: source }}
         resizeMode="contain"
         className="h-full"
     />)
 
-    console.log("image", image)
-    if (image.ref === null) {
-        return null
-    }
     return (
         <>
             <StyledModal show={showModal}>
