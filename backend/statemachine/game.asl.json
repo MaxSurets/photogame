@@ -24,7 +24,7 @@
       "Next": "GenerateRoundInfo",
       "Assign": {
         "players": "{% $states.result.players %}",
-        "round": 0,
+        "round": 1,
         "room": "{% $states.input.room %}",
         "maxRounds": "{% $states.input.maxRounds %}"
       }
@@ -84,7 +84,9 @@
                 "callbackToken": "{% $states.context.Task.Token %}",
                 "uploadUrl": "{% $states.input.uploadUrl %}",
                 "prompt": "{% $prompt %}",
-                "round": "{% $round %}"
+                "round": "{% $round %}",
+                "players": "{% $players %}",
+                "action": "startRound"
               },
               "AuthType": "IAM_ROLE"
             },
@@ -118,7 +120,8 @@
               "Path": "{% '/@connections/' & $states.input.connectionId %}",
               "QueryParameters": {},
               "RequestBody": {
-                "callbackToken": "{% $states.context.Task.Token %}"
+                "callbackToken": "{% $states.context.Task.Token %}",
+                "action": "vote"
               },
               "AuthType": "IAM_ROLE"
             },
@@ -127,7 +130,10 @@
         }
       },
       "Items": "{% $uploads %}",
-      "Next": "SendResultsToPlayers"
+      "Next": "SendResultsToPlayers",
+      "Assign": {
+        "votes": "{% $states.result %}"
+      }
     },
     "SendResultsToPlayers": {
       "Type": "Map",
@@ -149,7 +155,8 @@
               "Path": "{% '/@connections/' & $states.input.connectionId %}",
               "QueryParameters": {},
               "RequestBody": {
-                "results": "{% $votes %}"
+                "results": "{% $votes %}",
+                "action": "showResults"
               },
               "AuthType": "IAM_ROLE"
             },
@@ -158,9 +165,11 @@
         }
       },
       "Items": "{% $players %}",
-      "Assign": {
-        "votes": "{% $states.input %}"
-      },
+      "Next": "Wait"
+    },
+    "Wait": {
+      "Type": "Wait",
+      "Seconds": 6,
       "Next": "endGame?"
     },
     "endGame?": {

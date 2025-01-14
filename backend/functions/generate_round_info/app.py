@@ -54,13 +54,13 @@ def lambda_handler(event, context):
 
     round_info = {
         "prompt": generate_prompt(),
-        "uploads": [],
+        "uploads": []
     }
     players = event.get("players", [])
 
     for player in players:
         # Generate a unique upload key for each player
-        upload_key = f"{event.get('room')}/{event.get('round')}/{player.get('id')}"
+        upload_key = f"{event.get('room')}/{event.get('round')}/{player.get('id')}.jpg"
 
         # Create a pre-signed S3 URL for uploads
         s3_client = boto3.client("s3")
@@ -69,7 +69,6 @@ def lambda_handler(event, context):
             Params={
                 "Bucket": os.environ["bucket_name"],
                 "Key": upload_key,
-                "ContentType": "image/jpeg",
             },
             ExpiresIn=605,
         )
