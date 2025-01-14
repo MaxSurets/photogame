@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View, ScrollView, Text } from "react-native";
 import { useSelector } from '@xstate/react';
 import { actor } from '@/services/apiclient';
 import Button from "@/components/Button";
@@ -7,6 +7,7 @@ import GameProgressBar from "@/components/GameProgressBar";
 import { renderSnapshotValue } from "@/services/utils"
 import GameImageUpload from "@/components/GameImageUpload";
 import GameImageOption from "@/components/GameImageOption";
+import Leaderboard from "@/components/Leaderboard";
 
 
 export default function Game() {
@@ -18,8 +19,6 @@ export default function Game() {
     const roomNumber = useSelector(actor, (state) => state.context.roomNumber)
     const scores = useSelector(actor, (state) => state.context.scores)
     const current = renderSnapshotValue(useSelector(actor, (snapshot) => snapshot.value))
-
-    console.log("Current", current)
 
 
     const renderImages = () => {
@@ -76,9 +75,10 @@ export default function Game() {
                 )
             case "game.waiting_for_votes":
                 return (
-                    <View className="items-center justify-center p-6 space-y-10">
-
-                        {renderImages()}
+                    <View className="h-full items-center justify-center p-6">
+                        <ScrollView className="h-5/6 space-y-10">
+                            {renderImages()}
+                        </ScrollView>
 
                         <Button
                             size="lg"
@@ -97,8 +97,8 @@ export default function Game() {
             case "game.round_over":
                 return (
                     <View className="items-center justify-center p-6 space-y-10">
-                        <Text className="text-white">Round over</Text>
-                        <Text className="text-white">Scores (show scores)</Text>
+                        <Text className="text-white text-3xl font-light">Round over</Text>
+                        <Leaderboard />
                     </View>
                 )
             case "game.game_over":
