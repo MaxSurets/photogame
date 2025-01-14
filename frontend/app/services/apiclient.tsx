@@ -211,7 +211,7 @@ const stateMachine = setup({
     error: undefined,
     roomNumber: '',
     players: [],
-    maxRounds: 3,
+    maxRounds: 4,
     prompt: '',
     round: 0,
     votes_for_round: {},
