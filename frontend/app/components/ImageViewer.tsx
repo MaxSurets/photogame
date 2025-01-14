@@ -1,4 +1,3 @@
-import { StyleSheet } from "react-native";
 import { Image, type ImageSource } from "expo-image";
 
 type Props = {
@@ -9,13 +8,6 @@ type Props = {
 export default function ImageViewer({ imgSource, selectedImage }: Props) {
   const imageSource = selectedImage ? { uri: selectedImage } : imgSource;
 
-  return <Image source={imageSource} style={styles.image} />;
+  return <Image source={imageSource} className="rounded-xl w-[320px] h-[440px] md:w-[480px] lg:h-[660px]" />;
 }
 
-const styles = StyleSheet.create({
-  image: {
-    width: 320,
-    height: 440,
-    borderRadius: 18,
-  },
-});
