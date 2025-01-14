@@ -91,7 +91,7 @@ def lambda_handler(event, context):
         }
 
     else:
-        room_id = str(random.randint(1000, 9999))
+        room_id = str(random.randint(10000, 99999))
         print("Creating room with ID:", room_id)
         try:
             sfn_client.start_execution(
@@ -102,7 +102,7 @@ def lambda_handler(event, context):
                         "room": room_id,
                         "hostConnectionId": connection_id,
                         "hostName": name,
-                        "maxRounds": 3  # TODO: adjustable max rounds count
+                        "maxRounds": 4  # TODO: adjustable max rounds count
                     }
                 ),
             )
