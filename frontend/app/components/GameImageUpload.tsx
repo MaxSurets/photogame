@@ -76,7 +76,6 @@ export default function Index() {
 
     const handleImageUpload = async () => {
         let imageToUpload;
-        setUploading(true)
         try {
             if (Platform.OS !== "web") {
                 imageToUpload = await captureRef(imageRef, {
@@ -95,13 +94,13 @@ export default function Index() {
         } catch (e) {
             console.error("Failed to get image", e);
         }
-
         if (!imageToUpload || !uploadUrl) {
             console.error("Image or upload URL not available");
             setUploading(false)
             alert("Failed to upload photo");
             return;
         }
+        setUploading(true)
         try {
             if (imageToUpload) {
                 const response = await fetch(imageToUpload);
@@ -128,36 +127,6 @@ export default function Index() {
         setUploading(false)
     };
 
-    const onSaveImageAsync = async () => {
-        if (Platform.OS !== "web") {
-            try {
-                const localUri = await captureRef(imageRef, {
-                    height: 440,
-                    quality: 1,
-                });
-
-                await MediaLibrary.saveToLibraryAsync(localUri);
-                if (localUri) {
-                    alert("Saved!");
-                }
-            } catch (e) {
-                console.log(e);
-            }
-        } else {
-            try {
-                const dataUrl = await domtoimage.toJpeg(imageRef.current, {
-                    quality: 0.95,
-                });
-
-                let link = document.createElement("a");
-                link.download = "sticker-smash.jpeg";
-                link.href = dataUrl;
-                link.click();
-            } catch (e) {
-                console.log(e);
-            }
-        }
-    };
 
     return (
         <GestureHandlerRootView className="flex-1 items-center">
